@@ -52,13 +52,34 @@ router.get('/blocked', verifyToken, async (req, res) => {
   }
 });
 
-// POST /api/admin/blocked  { date, startTime?, endTime?, reason? }
+// POST /api/admin/blocked  { date, startTime?, endTime?, reason?, repeat?, repeatUntil? }
 router.post('/blocked', verifyToken, async (req, res) => {
   try {
-    const { date, startTime, endTime, reason } = req.body;
+    const { date, startTime, endTime, reason, repeat, repeatUntil } = req.body;
     if (!date) return res.status(400).json({ error: 'date required' });
+
+    if (repeat && repeatUntil) {
+      const step = repeat === 'weekly' ? 7 : 1;
+      const dates = [];
+      const [y, m, d] = date.split('-').map(Number);
+      let cur = new Date(y, m - 1, d);
+      const [uy, um, ud] = repeatUntil.split('-').map(Number);
+      const until = new Date(uy, um - 1, ud);
+      while (cur <= until) {
+        const yy = cur.getFullYear();
+        const mm = String(cur.getMonth() + 1).padStart(2, '0');
+        const dd = String(cur.getDate()).padStart(2, '0');
+        dates.push(`${yy}-${mm}-${dd}`);
+        cur.setDate(cur.getDate() + step);
+      }
+      const results = await Promise.all(
+        dates.map(dt => createBlockedSlot({ date: dt, startTime, endTime, reason }))
+      );
+      return res.json({ success: true, count: results.length });
+    }
+
     const result = await createBlockedSlot({ date, startTime, endTime, reason });
-    res.json({ success: true, id: result.id });
+    res.json({ success: true, id: result.id, count: 1 });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to block slot' });

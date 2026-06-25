@@ -211,7 +211,21 @@ select option{background:var(--surface)}
             <input type="time" id="blockEnd" step="3600">
           </div>
         </div>
-        <div class="field" style="margin-bottom:14px">
+        <div class="form-row" style="margin-top:4px">
+          <div class="field">
+            <label>Repeat</label>
+            <select id="blockRepeat" onchange="toggleRepeatUntil()">
+              <option value="">No repeat</option>
+              <option value="weekly">Weekly (same day every week)</option>
+              <option value="daily">Daily (every day in range)</option>
+            </select>
+          </div>
+          <div class="field" id="repeatUntilField" style="display:none">
+            <label>Repeat until *</label>
+            <input type="date" id="blockRepeatUntil">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:14px;margin-top:12px">
           <label>Reason (optional)</label>
           <input type="text" id="blockReason" placeholder="e.g. Private event, cleaning…">
         </div>
@@ -524,20 +538,29 @@ function renderBlocked(slots) {
     </table>`;
 }
 
+function toggleRepeatUntil() {
+  const repeat = document.getElementById('blockRepeat').value;
+  document.getElementById('repeatUntilField').style.display = repeat ? 'flex' : 'none';
+}
+
 async function addBlock() {
   clearAlert('blockAlert');
-  const date  = document.getElementById('blockDate').value;
-  const start = document.getElementById('blockStart').value;
-  const end   = document.getElementById('blockEnd').value;
-  const reason= document.getElementById('blockReason').value.trim();
+  const date       = document.getElementById('blockDate').value;
+  const start      = document.getElementById('blockStart').value;
+  const end        = document.getElementById('blockEnd').value;
+  const reason     = document.getElementById('blockReason').value.trim();
+  const repeat     = document.getElementById('blockRepeat').value;
+  const repeatUntil= document.getElementById('blockRepeatUntil').value;
   if (!date) return showAlert('blockAlert', 'Date is required.');
   if ((start && !end) || (!start && end)) return showAlert('blockAlert', 'Provide both start and end time, or leave both blank for an all-day block.');
   if (start && end && start >= end) return showAlert('blockAlert', 'End time must be after start time.');
+  if (repeat && !repeatUntil) return showAlert('blockAlert', 'Please set a "Repeat until" date.');
+  if (repeat && repeatUntil <= date) return showAlert('blockAlert', '"Repeat until" must be after the start date.');
   const btn = document.getElementById('addBlockBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
   try {
     const res = await apiFetch(`${API}/blocked`, {
-      method:'POST', body: JSON.stringify({date, startTime:start||null, endTime:end||null, reason})
+      method:'POST', body: JSON.stringify({date, startTime:start||null, endTime:end||null, reason, repeat:repeat||null, repeatUntil:repeatUntil||null})
     });
     const data = await res.json();
     if (!res.ok) { showAlert('blockAlert', data.error||'Failed'); return; }
@@ -545,7 +568,11 @@ async function addBlock() {
     document.getElementById('blockStart').value = '';
     document.getElementById('blockEnd').value = '';
     document.getElementById('blockReason').value = '';
-    showAlert('blockAlert', 'Slot blocked successfully.', 'success');
+    document.getElementById('blockRepeat').value = '';
+    document.getElementById('blockRepeatUntil').value = '';
+    document.getElementById('repeatUntilField').style.display = 'none';
+    const msg = data.count > 1 ? `${data.count} slots blocked (${repeat}).` : 'Slot blocked successfully.';
+    showAlert('blockAlert', msg, 'success');
     loadBlocked();
   } catch { showAlert('blockAlert', 'Network error.'); }
   finally { btn.disabled = false; btn.textContent = 'Block Slot'; }
