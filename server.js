@@ -33,17 +33,28 @@ app.get('/api/settings', async (_req, res) => {
   }
 });
 
-// Temporary debug: check if server can reach booking_config metaobject
+// Temporary debug: check server's Shopify access
 app.get('/api/debug/settings', async (_req, res) => {
+  const { shopifyGraphQL } = require('./services/shopify');
+  const KNOWN_ID = 'gid://shopify/Metaobject/207702261863';
+  const out = { shop: process.env.SHOPIFY_SHOP };
+
   try {
-    const { shopifyGraphQL } = require('./services/shopify');
-    const data = await shopifyGraphQL(
+    const d1 = await shopifyGraphQL(
       `query { metaobjects(type: "booking_config", first: 1) { nodes { id fields { key value } } } }`
     );
-    res.json({ ok: true, shop: process.env.SHOPIFY_SHOP, nodes: data.metaobjects.nodes });
-  } catch (err) {
-    res.json({ ok: false, shop: process.env.SHOPIFY_SHOP, error: err.message });
-  }
+    out.byType = d1.metaobjects.nodes;
+  } catch (e) { out.byTypeError = e.message; }
+
+  try {
+    const d2 = await shopifyGraphQL(
+      `query($id:ID!){ node(id:$id){ ... on Metaobject { id fields { key value } } } }`,
+      { id: KNOWN_ID }
+    );
+    out.byId = d2.node;
+  } catch (e) { out.byIdError = e.message; }
+
+  res.json(out);
 });
 
 // SPA fallback: /admin/* → admin panel, everything else → booking form
