@@ -49,6 +49,36 @@ async function registerWebhook(topic, address) {
   console.log(`  ✅ Registered webhook: ${topic} → ${address}`);
 }
 
+async function ensureSettingsInstance() {
+  const data = await shopifyGraphQL(
+    `query { metaobjects(type: "booking_config", first: 1) { nodes { id } } }`
+  );
+  if (data.metaobjects.nodes.length > 0) {
+    console.log('  ↳ booking_config instance already exists — skipping');
+    return;
+  }
+  const create = await shopifyGraphQL(`
+    mutation($m: MetaobjectCreateInput!) {
+      metaobjectCreate(metaobject: $m) {
+        metaobject { id }
+        userErrors { field message }
+      }
+    }`, {
+    m: {
+      type: 'booking_config',
+      fields: [
+        { key: 'hourly_rate',            value: '10'   },
+        { key: 'weekday_full_day_price', value: '30'   },
+        { key: 'weekend_full_day_price', value: '50'   },
+        { key: 'full_day_enabled',       value: 'true' },
+      ],
+    },
+  });
+  const { userErrors } = create.metaobjectCreate;
+  if (userErrors.length) throw new Error(JSON.stringify(userErrors));
+  console.log(`  ✅ Created booking_config instance with default values`);
+}
+
 async function main() {
   console.log('\n🚀 Setting up Shopify metaobjects and webhooks...\n');
 
@@ -74,6 +104,14 @@ async function main() {
     { key: 'end_time',   name: 'End Time',   type: 'single_line_text_field', required: false },
     { key: 'reason',     name: 'Reason',     type: 'single_line_text_field', required: false },
   ]);
+
+  await ensureMetaobjectDefinition('booking_config', 'Booking Config', [
+    { key: 'hourly_rate',            name: 'Hourly Rate',            type: 'single_line_text_field', required: true },
+    { key: 'weekday_full_day_price', name: 'Weekday Full Day Price', type: 'single_line_text_field', required: true },
+    { key: 'weekend_full_day_price', name: 'Weekend Full Day Price', type: 'single_line_text_field', required: true },
+    { key: 'full_day_enabled',       name: 'Full Day Enabled',       type: 'single_line_text_field', required: true },
+  ]);
+  await ensureSettingsInstance();
 
   console.log('\nRegistering webhooks:');
   const baseUrl = process.env.BASE_URL || 'https://balance-booking.onrender.com';
