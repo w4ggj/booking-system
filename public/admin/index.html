@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin – Balance Gaming FL Reservations</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a14;--surface:#12121e;--card:#1a1a2e;--border:#2a2a42;
+  --accent:#e94560;--accent2:#c73652;--green:#22c55e;--yellow:#f59e0b;
+  --text:#e0e0e8;--muted:#888;--radius:10px;--font:'Segoe UI',system-ui,sans-serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+
+/* ── Login ── */
+#loginPage{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:40px;width:100%;max-width:380px}
+.login-card h1{font-size:20px;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.login-card h1 span{color:var(--accent)}
+.login-card p{color:var(--muted);font-size:13px;margin-bottom:28px}
+
+/* ── App shell ── */
+#app{display:none}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.topbar-title{font-size:15px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.topbar-title span{color:var(--accent)}
+.topbar-actions{display:flex;gap:10px;align-items:center}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);background:var(--surface);padding:0 24px}
+.tab{padding:14px 20px;cursor:pointer;font-size:14px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* ── Content ── */
+.content{padding:24px;max-width:1000px;margin:0 auto}
+.panel{display:none}
+.panel.active{display:block}
+
+/* ── Stats row ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;text-align:center}
+.stat-val{font-size:28px;font-weight:800;color:var(--accent)}
+.stat-label{color:var(--muted);font-size:12px;margin-top:4px;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── Table ── */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-header{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.table-header h2{font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;padding:10px 16px;font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-bottom:1px solid var(--border);background:var(--surface)}
+td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.status-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.status-confirmed{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3)}
+.status-cancelled{background:rgba(233,69,96,.1);color:#ff8fa3;border:1px solid rgba(233,69,96,.2)}
+.table-empty{padding:40px;text-align:center;color:var(--muted)}
+
+/* ── Forms ── */
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+.form-card h2{font-size:14px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:18px}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:12px}
+.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;letter-spacing:.3px}
+input[type=date],input[type=time],input[type=text],input[type=email],textarea,select{
+  width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);padding:10px 12px;font-size:14px;font-family:var(--font);outline:none;transition:border-color .2s;
+}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+input[type=date],input[type=time]{color-scheme:dark}
+textarea{resize:vertical;min-height:100px}
+select option{background:var(--surface)}
+
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border:none;border-radius:8px;font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer;transition:all .15s;text-transform:uppercase;letter-spacing:.5px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent2)}
+.btn-outline{background:transparent;color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:transparent;color:#ff8fa3;border:1px solid rgba(233,69,96,.3)}
+.btn-danger:hover{background:rgba(233,69,96,.15)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-icon{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:16px;transition:all .15s}
+.btn-icon:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Alerts ── */
+.alert{padding:12px 16px;border-radius:8px;font-size:14px;margin-bottom:12px;display:none}
+.alert.error{background:#2d0d16;border:1px solid var(--accent);color:#ff8fa3}
+.alert.success{background:#0d2d1a;border:1px solid #1a8a4a;color:#80ffa3}
+.alert.visible{display:block}
+
+/* ── Spinner ── */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Modal ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;width:100%;max-width:500px}
+.modal h2{font-size:16px;font-weight:700;margin-bottom:20px}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+/* ── Misc ── */
+.badge-today{background:rgba(245,158,11,.15);color:var(--yellow);border:1px solid rgba(245,158,11,.3);font-size:10px;padding:2px 7px;border-radius:10px;margin-left:6px}
+.text-muted{color:var(--muted)}
+.mt-12{margin-top:12px}
+</style>
+</head>
+<body>
+
+<!-- ══════════ LOGIN ══════════ -->
+<div id="loginPage">
+  <div class="login-card">
+    <h1><span>Balance</span> Admin</h1>
+    <p>Secret Lair Lounge reservations</p>
+    <div id="loginAlert" class="alert error"></div>
+    <div class="field" style="margin-bottom:14px">
+      <label for="pwInput">Password</label>
+      <input type="text" id="pwInput" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary" style="width:100%" onclick="doLogin()" id="loginBtn">Sign In</button>
+  </div>
+</div>
+
+<!-- ══════════ APP ══════════ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-title"><span>Balance</span> Gaming FL — Admin</div>
+    <div class="topbar-actions">
+      <a href="/" target="_blank" class="btn btn-outline btn-sm">View Booking Form</a>
+      <button class="btn btn-outline btn-sm" onclick="doLogout()">Logout</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('reservations')">Reservations</div>
+    <div class="tab" onclick="switchTab('blocked')">Blocked Slots</div>
+  </div>
+
+  <!-- ── RESERVATIONS PANEL ── -->
+  <div class="content">
+    <div class="panel active" id="panelReservations">
+      <div class="stats" id="statsRow"></div>
+      <div id="resAlert" class="alert error"></div>
+
+      <div class="table-wrap">
+        <div class="table-header">
+          <h2>Upcoming Reservations</h2>
+          <div style="display:flex;gap:8px;align-items:center">
+            <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer">
+              <input type="checkbox" id="showAll" onchange="loadReservations()" style="accent-color:var(--accent)"> Show past
+            </label>
+            <button class="btn btn-outline btn-sm" onclick="loadReservations()">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="resTableWrap"><div class="table-empty"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- ── BLOCKED SLOTS PANEL ── -->
+    <div class="panel" id="panelBlocked">
+      <div id="blockAlert" class="alert error"></div>
+
+      <div class="form-card">
+        <h2>Block a Date or Time Slot</h2>
+        <div class="form-row">
+          <div class="field">
+            <label>Date *</label>
+            <input type="date" id="blockDate">
+          </div>
+          <div class="field">
+            <label>Start time <span class="text-muted">(leave blank = all day)</span></label>
+            <input type="time" id="blockStart" step="3600">
+          </div>
+          <div class="field">
+            <label>End time</label>
+            <input type="time" id="blockEnd" step="3600">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:14px">
+          <label>Reason (optional)</label>
+          <input type="text" id="blockReason" placeholder="e.g. Private event, cleaning…">
+        </div>
+        <button class="btn btn-primary" onclick="addBlock()" id="addBlockBtn">Block Slot</button>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-header"><h2>Blocked Slots</h2>
+          <button class="btn btn-outline btn-sm" onclick="loadBlocked()">↻ Refresh</button>
+        </div>
+        <div id="blockedTableWrap"><div class="table-empty"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MESSAGE MODAL ══════════ -->
+<div class="modal-overlay" id="msgModal">
+  <div class="modal">
+    <h2>Send Message to Customer</h2>
+    <div id="msgAlert" class="alert error"></div>
+    <input type="hidden" id="msgEmail">
+    <input type="hidden" id="msgName">
+    <div class="field" style="margin-bottom:12px">
+      <label>To</label>
+      <input type="text" id="msgToDisplay" disabled style="opacity:.6">
+    </div>
+    <div class="field" style="margin-bottom:12px">
+      <label>Subject</label>
+      <input type="text" id="msgSubject" placeholder="Regarding your reservation…">
+    </div>
+    <div class="field">
+      <label>Message</label>
+      <textarea id="msgBody" placeholder="Type your message here…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="sendMessage()" id="msgSendBtn">Send Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ CANCEL CONFIRM MODAL ══════════ -->
+<div class="modal-overlay" id="cancelModal">
+  <div class="modal">
+    <h2>Cancel Reservation?</h2>
+    <p style="color:var(--muted);margin-bottom:20px;font-size:14px">
+      This will mark the reservation as cancelled. The customer will <strong style="color:var(--text)">not</strong> be notified automatically — use the message button to contact them. Shopify refunds must be processed manually in your Shopify admin.
+    </p>
+    <input type="hidden" id="cancelId">
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeCancelModal()">Keep It</button>
+      <button class="btn btn-danger" onclick="confirmCancel()" id="cancelConfirmBtn">Yes, Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api/admin';
+let token = localStorage.getItem('balanceAdminToken') || '';
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function fmt12(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`;
+}
+function fmtDate(d) {
+  if (!d) return '';
+  const [y,mo,dd] = d.split('-').map(Number);
+  return new Date(y,mo-1,dd).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+}
+function isToday(d) {
+  const t = new Date(); return d === `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+}
+function showAlert(id, msg, type='error') {
+  const el = document.getElementById(id); el.textContent = msg; el.className = `alert ${type} visible`;
+}
+function clearAlert(id) { const el = document.getElementById(id); el.className = 'alert error'; }
+function authHeaders() { return { 'Content-Type':'application/json', 'Authorization':`Bearer ${token}` }; }
+
+async function apiFetch(path, opts={}) {
+  const res = await fetch(path, { ...opts, headers: { ...authHeaders(), ...(opts.headers||{}) } });
+  if (res.status === 401) { doLogout(); throw new Error('Session expired'); }
+  return res;
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+async function doLogin() {
+  clearAlert('loginAlert');
+  const pw = document.getElementById('pwInput').value;
+  if (!pw) return showAlert('loginAlert', 'Enter your password.');
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const res = await fetch(`${API}/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({password:pw}) });
+    const data = await res.json();
+    if (!res.ok) { showAlert('loginAlert', data.error||'Wrong password'); return; }
+    token = data.token;
+    localStorage.setItem('balanceAdminToken', token);
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadReservations();
+    loadBlocked();
+  } catch { showAlert('loginAlert', 'Connection error. Is the server running?'); }
+  finally { btn.disabled = false; btn.textContent = 'Sign In'; }
+}
+
+function doLogout() {
+  token = ''; localStorage.removeItem('balanceAdminToken');
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'flex';
+}
+
+// Auto-login if token saved
+if (token) {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  loadReservations();
+  loadBlocked();
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['reservations','blocked'][i]===name));
+  document.getElementById('panelReservations').classList.toggle('active', name==='reservations');
+  document.getElementById('panelBlocked').classList.toggle('active', name==='blocked');
+}
+
+// ── Reservations ──────────────────────────────────────────────────────────
+async function loadReservations() {
+  clearAlert('resAlert');
+  document.getElementById('resTableWrap').innerHTML = '<div class="table-empty"><span class="spinner"></span></div>';
+  const all = document.getElementById('showAll').checked;
+  try {
+    const res = await apiFetch(`${API}/reservations?all=${all}`);
+    const data = await res.json();
+    if (!res.ok) { showAlert('resAlert', data.error); return; }
+    renderReservations(data.reservations);
+  } catch(e) {
+    if (e.message !== 'Session expired') showAlert('resAlert', 'Failed to load reservations.');
+  }
+}
+
+function renderReservations(rows) {
+  const upcoming = rows.filter(r => r.status !== 'cancelled');
+  const today = rows.filter(r => { const t = new Date(); const d = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; return r.date === d && r.status !== 'cancelled'; });
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat"><div class="stat-val">${upcoming.length}</div><div class="stat-label">Upcoming</div></div>
+    <div class="stat"><div class="stat-val">${today.length}</div><div class="stat-label">Today</div></div>
+    <div class="stat"><div class="stat-val">$${upcoming.reduce((s,r)=>s+parseFloat(r.total_price||0),0)}</div><div class="stat-label">Revenue Ahead</div></div>
+  `;
+
+  if (!rows.length) {
+    document.getElementById('resTableWrap').innerHTML = '<div class="table-empty">No reservations found.</div>';
+    return;
+  }
+
+  const tbody = rows.map(r => {
+    const cancelled = r.status === 'cancelled';
+    const todayBadge = isToday(r.date) && !cancelled ? '<span class="badge-today">TODAY</span>' : '';
+    const timeStr = (r.is_full_day==='true') ? 'Full Day' : `${fmt12(r.start_time)} – ${fmt12(r.end_time)}`;
+    return `<tr>
+      <td><strong>${fmtDate(r.date)}</strong>${todayBadge}</td>
+      <td>${timeStr}</td>
+      <td>${r.customer_name}<br><span class="text-muted" style="font-size:12px">${r.customer_email}</span></td>
+      <td>$${r.total_price || '—'}</td>
+      <td><span class="status-badge status-${r.status}">${r.status}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-icon" title="Send message" onclick='openMessage(${JSON.stringify(r.customer_email)},${JSON.stringify(r.customer_name)})'>✉</button>
+        ${!cancelled ? `<button class="btn-icon" title="Cancel reservation" onclick='openCancel(${JSON.stringify(r.id)})' style="margin-left:4px">✕</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('resTableWrap').innerHTML = `
+    <table>
+      <thead><tr><th>Date</th><th>Time</th><th>Customer</th><th>Total</th><th>Status</th><th></th></tr></thead>
+      <tbody>${tbody}</tbody>
+    </table>`;
+}
+
+// ── Cancel ────────────────────────────────────────────────────────────────
+function openCancel(id) {
+  document.getElementById('cancelId').value = id;
+  document.getElementById('cancelModal').classList.add('open');
+}
+function closeCancelModal() { document.getElementById('cancelModal').classList.remove('open'); }
+
+async function confirmCancel() {
+  const id = document.getElementById('cancelId').value;
+  const btn = document.getElementById('cancelConfirmBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const res = await apiFetch(`${API}/reservations/cancel`, {
+      method:'PUT', body: JSON.stringify({id})
+    });
+    const data = await res.json();
+    if (!res.ok) { alert(data.error||'Failed to cancel'); return; }
+    closeCancelModal();
+    loadReservations();
+  } catch { alert('Network error'); }
+  finally { btn.disabled = false; btn.textContent = 'Yes, Cancel'; }
+}
+
+// ── Message modal ─────────────────────────────────────────────────────────
+function openMessage(email, name) {
+  clearAlert('msgAlert');
+  document.getElementById('msgEmail').value = email;
+  document.getElementById('msgName').value = name;
+  document.getElementById('msgToDisplay').value = `${name} <${email}>`;
+  document.getElementById('msgSubject').value = '';
+  document.getElementById('msgBody').value = '';
+  document.getElementById('msgModal').classList.add('open');
+}
+function closeModal() { document.getElementById('msgModal').classList.remove('open'); }
+
+async function sendMessage() {
+  clearAlert('msgAlert');
+  const subject = document.getElementById('msgSubject').value.trim();
+  const message = document.getElementById('msgBody').value.trim();
+  const email   = document.getElementById('msgEmail').value;
+  const name    = document.getElementById('msgName').value;
+  if (!subject || !message) return showAlert('msgAlert', 'Subject and message are required.');
+  const btn = document.getElementById('msgSendBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Sending…';
+  try {
+    const res = await apiFetch(`${API}/message`, {
+      method:'POST', body: JSON.stringify({customerEmail:email,customerName:name,subject,message})
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert('msgAlert', data.error||'Failed to send'); return; }
+    closeModal();
+    showAlert('resAlert', 'Message sent successfully.', 'success');
+    document.getElementById('resAlert').classList.add('visible');
+  } catch { showAlert('msgAlert', 'Network error.'); }
+  finally { btn.disabled = false; btn.textContent = 'Send Email'; }
+}
+
+// ── Blocked slots ─────────────────────────────────────────────────────────
+async function loadBlocked() {
+  document.getElementById('blockedTableWrap').innerHTML = '<div class="table-empty"><span class="spinner"></span></div>';
+  try {
+    const res = await apiFetch(`${API}/blocked`);
+    const data = await res.json();
+    if (!res.ok) { showAlert('blockAlert', data.error); return; }
+    renderBlocked(data.slots);
+  } catch(e) { if (e.message !== 'Session expired') showAlert('blockAlert', 'Failed to load.'); }
+}
+
+function renderBlocked(slots) {
+  if (!slots.length) {
+    document.getElementById('blockedTableWrap').innerHTML = '<div class="table-empty">No blocked slots.</div>';
+    return;
+  }
+  const tbody = slots.map(s => {
+    const timeStr = s.start_time && s.end_time ? `${fmt12(s.start_time)} – ${fmt12(s.end_time)}` : 'All Day';
+    return `<tr>
+      <td><strong>${fmtDate(s.date)}</strong></td>
+      <td>${timeStr}</td>
+      <td>${s.reason || '—'}</td>
+      <td><button class="btn-icon" title="Remove block" onclick='removeBlock(${JSON.stringify(s.id)})'>🗑</button></td>
+    </tr>`;
+  }).join('');
+  document.getElementById('blockedTableWrap').innerHTML = `
+    <table>
+      <thead><tr><th>Date</th><th>Time</th><th>Reason</th><th></th></tr></thead>
+      <tbody>${tbody}</tbody>
+    </table>`;
+}
+
+async function addBlock() {
+  clearAlert('blockAlert');
+  const date  = document.getElementById('blockDate').value;
+  const start = document.getElementById('blockStart').value;
+  const end   = document.getElementById('blockEnd').value;
+  const reason= document.getElementById('blockReason').value.trim();
+  if (!date) return showAlert('blockAlert', 'Date is required.');
+  if ((start && !end) || (!start && end)) return showAlert('blockAlert', 'Provide both start and end time, or leave both blank for an all-day block.');
+  if (start && end && start >= end) return showAlert('blockAlert', 'End time must be after start time.');
+  const btn = document.getElementById('addBlockBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const res = await apiFetch(`${API}/blocked`, {
+      method:'POST', body: JSON.stringify({date, startTime:start||null, endTime:end||null, reason})
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert('blockAlert', data.error||'Failed'); return; }
+    document.getElementById('blockDate').value = '';
+    document.getElementById('blockStart').value = '';
+    document.getElementById('blockEnd').value = '';
+    document.getElementById('blockReason').value = '';
+    showAlert('blockAlert', 'Slot blocked successfully.', 'success');
+    loadBlocked();
+  } catch { showAlert('blockAlert', 'Network error.'); }
+  finally { btn.disabled = false; btn.textContent = 'Block Slot'; }
+}
+
+async function removeBlock(id) {
+  if (!confirm('Remove this block?')) return;
+  try {
+    const res = await apiFetch(`${API}/blocked`, { method:'DELETE', body: JSON.stringify({id}) });
+    if (!res.ok) { alert('Failed to remove.'); return; }
+    loadBlocked();
+  } catch { alert('Network error.'); }
+}
+
+// Close modals on overlay click
+document.getElementById('msgModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeModal(); });
+document.getElementById('cancelModal').addEventListener('click', e => { if(e.target===e.currentTarget) closeCancelModal(); });
+</script>
+</body>
+</html>

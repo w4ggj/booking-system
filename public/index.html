@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reserve the Secret Lair Lounge – Balance Gaming FL</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a14;--surface:#12121e;--card:#1a1a2e;--border:#2a2a42;
+  --accent:#e94560;--accent2:#c73652;--text:#e0e0e8;--muted:#888;
+  --radius:10px;--font:'Segoe UI',system-ui,sans-serif;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;padding:20px 16px 60px}
+a{color:var(--accent)}
+
+/* ── Layout ── */
+.wrap{max-width:640px;margin:0 auto}
+header{text-align:center;padding:32px 0 28px}
+header h1{font-size:clamp(20px,4vw,28px);letter-spacing:2px;color:#fff;text-transform:uppercase}
+header p{color:var(--muted);font-size:13px;margin-top:6px;letter-spacing:1px;text-transform:uppercase}
+.logo-accent{color:var(--accent)}
+
+/* ── Steps ── */
+.steps{display:flex;gap:4px;margin-bottom:32px}
+.step{flex:1;height:3px;background:var(--border);border-radius:2px;transition:background .3s}
+.step.done{background:var(--accent)}
+.step.active{background:var(--accent);opacity:.5}
+
+/* ── Section ── */
+.section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px;display:none}
+.section.visible{display:block}
+.section-title{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-title span{color:var(--accent);font-size:16px}
+
+/* ── Inputs ── */
+input[type=date],input[type=text],input[type=email]{
+  width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);padding:12px 14px;font-size:15px;font-family:var(--font);outline:none;
+  transition:border-color .2s;
+}
+input[type=date]:focus,input[type=text]:focus,input[type=email]:focus{border-color:var(--accent)}
+input[type=date]{color-scheme:dark}
+.field-group{display:grid;gap:12px}
+.field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;letter-spacing:.5px}
+
+/* ── Chip buttons ── */
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{
+  padding:10px 18px;border:1px solid var(--border);border-radius:8px;
+  background:var(--surface);color:var(--text);cursor:pointer;font-size:14px;
+  font-family:var(--font);transition:all .15s;user-select:none;
+}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip.selected{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.chip.full-day{border-style:dashed}
+.chip.full-day.selected{border-style:solid}
+.chip:disabled,.chip[disabled]{opacity:.35;cursor:not-allowed;pointer-events:none}
+
+/* ── Price badge ── */
+.price-tag{font-size:13px;color:var(--accent);font-weight:600;margin-left:auto}
+
+/* ── Summary card ── */
+.summary{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;margin-top:4px}
+.summary-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}
+.summary-row:last-child{border-bottom:none;padding-top:12px;font-weight:700;font-size:16px}
+.summary-row .label{color:var(--muted)}
+.summary-row .value{font-weight:600}
+.total-price{color:var(--accent);font-size:22px;font-weight:800}
+
+/* ── Button ── */
+.btn{
+  display:block;width:100%;padding:16px;border:none;border-radius:10px;
+  background:var(--accent);color:#fff;font-size:16px;font-weight:700;
+  font-family:var(--font);cursor:pointer;letter-spacing:1px;text-transform:uppercase;
+  transition:background .2s;margin-top:12px;
+}
+.btn:hover{background:var(--accent2)}
+.btn:disabled{background:#444;cursor:not-allowed;opacity:.7}
+
+/* ── Alerts ── */
+.alert{padding:12px 16px;border-radius:8px;font-size:14px;margin-bottom:12px;display:none}
+.alert.error{background:#2d0d16;border:1px solid var(--accent);color:#ff8fa3}
+.alert.info{background:#0d1a2d;border:1px solid #1a4a8a;color:#80b3ff}
+.alert.success{background:#0d2d1a;border:1px solid #1a8a4a;color:#80ffa3}
+.alert.visible{display:block}
+
+/* ── No slots ── */
+.no-slots{color:var(--muted);font-size:14px;padding:12px 0;text-align:center}
+
+/* ── Loading spinner ── */
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Footer ── */
+.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:32px;line-height:2}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1><span class="logo-accent">Balance</span> Gaming FL</h1>
+    <p>Secret Lair Lounge &mdash; Reserve Your Session</p>
+  </header>
+
+  <div class="steps">
+    <div class="step active" id="s1"></div>
+    <div class="step" id="s2"></div>
+    <div class="step" id="s3"></div>
+    <div class="step" id="s4"></div>
+  </div>
+
+  <div id="alertBox" class="alert error"></div>
+
+  <!-- Step 1: Date -->
+  <div class="section visible" id="secDate">
+    <div class="section-title"><span>1</span> Choose a Date</div>
+    <div class="field">
+      <label for="datePicker">Select date</label>
+      <input type="date" id="datePicker">
+    </div>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px">
+      Mon–Fri 4–8 PM &nbsp;|&nbsp; Sat 11 AM–8 PM &nbsp;|&nbsp; Sun 12–8 PM &nbsp;|&nbsp; $10/hr
+    </p>
+  </div>
+
+  <!-- Step 2: Duration -->
+  <div class="section" id="secDuration">
+    <div class="section-title"><span>2</span> Choose Duration <span class="price-tag" id="hourlyNote"></span></div>
+    <div class="chips" id="durationChips"></div>
+  </div>
+
+  <!-- Step 3: Time Slot -->
+  <div class="section" id="secTime">
+    <div class="section-title"><span>3</span> Choose Start Time</div>
+    <div id="slotsWrap"></div>
+  </div>
+
+  <!-- Step 4: Your Info + Summary -->
+  <div class="section" id="secInfo">
+    <div class="section-title"><span>4</span> Your Information</div>
+    <div class="field-group">
+      <div class="field">
+        <label for="custName">Full name</label>
+        <input type="text" id="custName" placeholder="Jane Smith" autocomplete="name">
+      </div>
+      <div class="field">
+        <label for="custEmail">Email address <span style="color:var(--muted);font-size:11px">(confirmation sent here)</span></label>
+        <input type="email" id="custEmail" placeholder="jane@example.com" autocomplete="email">
+      </div>
+    </div>
+
+    <div class="summary" id="bookingSummary" style="margin-top:20px;display:none">
+      <div class="summary-row"><span class="label">Date</span><span class="value" id="sumDate">—</span></div>
+      <div class="summary-row"><span class="label">Time</span><span class="value" id="sumTime">—</span></div>
+      <div class="summary-row"><span class="label">Duration</span><span class="value" id="sumDuration">—</span></div>
+      <div class="summary-row"><span class="label">Total</span><span class="total-price" id="sumPrice">—</span></div>
+    </div>
+
+    <button class="btn" id="bookBtn" onclick="submitBooking()">Book Now &rarr;</button>
+  </div>
+
+  <div class="footer">
+    <p>Secure checkout via Shopify &bull; Confirmation email sent immediately</p>
+    <p>Questions? <a href="mailto:balance.ma.gaming@gmail.com">balance.ma.gaming@gmail.com</a></p>
+  </div>
+</div>
+
+<script>
+const API = '';
+let state = { date: null, duration: null, isFullDay: false, startTime: null, endTime: null, price: 0 };
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function fmt12(t) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`;
+}
+function fmtDate(d) {
+  const [y, mo, dd] = d.split('-').map(Number);
+  return new Date(y, mo-1, dd).toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric', year:'numeric'});
+}
+function showAlert(msg, type='error') {
+  const el = document.getElementById('alertBox');
+  el.textContent = msg;
+  el.className = `alert ${type} visible`;
+  el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+function clearAlert() {
+  const el = document.getElementById('alertBox');
+  el.className = 'alert error';
+}
+function setStep(n) {
+  [1,2,3,4].forEach(i => {
+    const s = document.getElementById(`s${i}`);
+    if (i < n) s.className = 'step done';
+    else if (i === n) s.className = 'step active';
+    else s.className = 'step';
+  });
+}
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
+  // show all sections up to and including this one
+  const order = ['secDate','secDuration','secTime','secInfo'];
+  const idx = order.indexOf(id);
+  order.slice(0, idx+1).forEach(s => { const el=document.getElementById(s); if(el) el.classList.add('visible'); });
+}
+
+// ── Min date = today ──────────────────────────────────────────────────────
+(function setMinDate() {
+  const today = new Date();
+  const y = today.getFullYear(), m = String(today.getMonth()+1).padStart(2,'0'), d = String(today.getDate()).padStart(2,'0');
+  document.getElementById('datePicker').min = `${y}-${m}-${d}`;
+})();
+
+// ── Step 1: Date selected ─────────────────────────────────────────────────
+document.getElementById('datePicker').addEventListener('change', async function() {
+  state.date = this.value;
+  state.duration = null; state.isFullDay = false; state.startTime = null; state.endTime = null;
+  clearAlert();
+  document.getElementById('secDuration').classList.remove('visible');
+  document.getElementById('secTime').classList.remove('visible');
+  document.getElementById('secInfo').classList.remove('visible');
+  if (!state.date) return;
+
+  const chips = document.getElementById('durationChips');
+  chips.innerHTML = '<div style="color:var(--muted);font-size:13px"><span class="spinner"></span>Loading...</div>';
+  document.getElementById('secDuration').classList.add('visible');
+  setStep(2);
+
+  try {
+    const res = await fetch(`${API}/api/availability?date=${state.date}`);
+    const data = await res.json();
+    if (!data.open) {
+      chips.innerHTML = '<div class="no-slots">Closed on this day.</div>';
+      return;
+    }
+    document.getElementById('hourlyNote').textContent = '$10/hr';
+    chips.innerHTML = '';
+    data.durations.forEach(d => {
+      const btn = document.createElement('button');
+      btn.className = 'chip' + (d.isFullDay ? ' full-day' : '');
+      btn.dataset.hours = d.hours;
+      btn.dataset.price = d.price;
+      btn.dataset.fullDay = d.isFullDay;
+      btn.innerHTML = `${d.label} <span style="color:var(--muted);font-size:12px;margin-left:4px">$${d.price}</span>`;
+      btn.onclick = () => selectDuration(btn, d);
+      chips.appendChild(btn);
+    });
+  } catch(e) {
+    chips.innerHTML = '<div class="no-slots">Failed to load — please try again.</div>';
+  }
+});
+
+// ── Step 2: Duration selected ─────────────────────────────────────────────
+async function selectDuration(btn, d) {
+  document.querySelectorAll('#durationChips .chip').forEach(c => c.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.duration = d.hours; state.isFullDay = d.isFullDay; state.price = d.price;
+  state.startTime = null; state.endTime = null;
+  clearAlert();
+  document.getElementById('secTime').classList.remove('visible');
+  document.getElementById('secInfo').classList.remove('visible');
+  setStep(3);
+
+  const wrap = document.getElementById('slotsWrap');
+  wrap.innerHTML = '<div style="color:var(--muted);font-size:13px"><span class="spinner"></span>Checking availability...</div>';
+  document.getElementById('secTime').classList.add('visible');
+  showSection('secTime');
+
+  try {
+    const url = `${API}/api/availability?date=${state.date}&duration=${d.hours}&isFullDay=${d.isFullDay}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data.slots || data.slots.length === 0) {
+      wrap.innerHTML = '<div class="no-slots">No available time slots for this duration. Please choose another.</div>';
+      return;
+    }
+
+    wrap.innerHTML = '';
+    const chips = document.createElement('div'); chips.className = 'chips';
+    data.slots.forEach(slot => {
+      const btn = document.createElement('button');
+      btn.className = 'chip';
+      btn.textContent = state.isFullDay ? 'Full Day' : fmt12(slot.startTime);
+      btn.onclick = () => selectSlot(btn, slot);
+      chips.appendChild(btn);
+    });
+    wrap.appendChild(chips);
+  } catch(e) {
+    wrap.innerHTML = '<div class="no-slots">Failed to load slots — please try again.</div>';
+  }
+}
+
+// ── Step 3: Time slot selected ────────────────────────────────────────────
+function selectSlot(btn, slot) {
+  document.querySelectorAll('#slotsWrap .chip').forEach(c => c.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.startTime = slot.startTime;
+  state.endTime   = slot.endTime;
+  clearAlert();
+  setStep(4);
+  showSection('secInfo');
+  updateSummary();
+}
+
+// ── Update booking summary ────────────────────────────────────────────────
+function updateSummary() {
+  if (!state.date || !state.startTime) return;
+  const timeStr = state.isFullDay ? 'Full Day' : `${fmt12(state.startTime)} – ${fmt12(state.endTime)}`;
+  const durStr  = state.isFullDay ? 'Full Day' : `${state.duration} hour${state.duration > 1 ? 's' : ''}`;
+  document.getElementById('sumDate').textContent     = fmtDate(state.date);
+  document.getElementById('sumTime').textContent     = timeStr;
+  document.getElementById('sumDuration').textContent = durStr;
+  document.getElementById('sumPrice').textContent    = `$${state.price}`;
+  document.getElementById('bookingSummary').style.display = 'block';
+}
+
+// ── Step 4: Submit ────────────────────────────────────────────────────────
+async function submitBooking() {
+  clearAlert();
+  const name  = document.getElementById('custName').value.trim();
+  const email = document.getElementById('custEmail').value.trim();
+
+  if (!name)  return showAlert('Please enter your name.');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAlert('Please enter a valid email address.');
+  if (!state.date || !state.startTime) return showAlert('Please complete all booking selections above.');
+
+  const btn = document.getElementById('bookBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Creating checkout…';
+
+  try {
+    const res = await fetch(`${API}/api/checkout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        date:          state.date,
+        startTime:     state.startTime,
+        endTime:       state.endTime,
+        durationHours: state.duration,
+        isFullDay:     state.isFullDay,
+        customerName:  name,
+        customerEmail: email,
+      }),
+    });
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      showAlert(data.error || 'Checkout failed. Please try again.');
+      btn.disabled = false;
+      btn.innerHTML = 'Book Now &rarr;';
+      return;
+    }
+
+    // Redirect to Shopify checkout
+    window.location.href = data.checkoutUrl;
+  } catch(e) {
+    showAlert('Network error. Please check your connection and try again.');
+    btn.disabled = false;
+    btn.innerHTML = 'Book Now &rarr;';
+  }
+}
+</script>
+</body>
+</html>
