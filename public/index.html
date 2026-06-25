@@ -354,8 +354,8 @@ async function submitBooking() {
       return;
     }
 
-    // Redirect to Shopify checkout
-    window.location.href = data.checkoutUrl;
+    // Redirect to Shopify checkout (window.top breaks out of any iframe)
+    window.top.location.href = data.checkoutUrl;
   } catch(e) {
     showAlert('Network error. Please check your connection and try again.');
     btn.disabled = false;
