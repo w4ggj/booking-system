@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Elite Membership — Balance Gaming FL</title>
+<script src="/portal-config.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:      #f5f5f7;
+    --surface: #ffffff;
+    --border:  #e0e0e8;
+    --text:    #1a1a2e;
+    --muted:   #777;
+    --accent:  #e94560;
+    --radius:  10px;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 24px; }
+  header h1 { font-size: 1.1rem; font-weight: 700; }
+  header span { color: var(--accent); }
+
+  .container { max-width: 660px; margin: 0 auto; padding: 32px 20px; }
+
+  /* Landing */
+  #sectionLanding { text-align: center; }
+  .hero-badge { display: inline-block; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; margin-bottom: 16px; }
+  .hero-title { font-size: 2rem; font-weight: 800; line-height: 1.25; margin-bottom: 10px; }
+  .hero-sub   { color: var(--muted); margin-bottom: 28px; }
+
+  .pricing-card { background: var(--surface); border: 2px solid var(--accent); border-radius: var(--radius); padding: 24px; margin-bottom: 24px; text-align: left; }
+  .pricing-card h3 { font-size: 0.85rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px; }
+  .price-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+  .price-big  { font-size: 2.4rem; font-weight: 800; color: var(--accent); }
+  .price-note { color: var(--muted); font-size: 0.9rem; }
+  .price-then { color: var(--muted); font-size: 0.88rem; margin-top: 6px; }
+  .price-then strong { color: var(--text); }
+
+  .perks { list-style: none; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 24px; }
+  .perks li { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 12px; font-size: 0.93rem; }
+  .perks li:last-child { border-bottom: none; }
+  .perk-icon { color: var(--accent); font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+  .perks li p { color: var(--muted); font-size: 0.83rem; margin-top: 2px; }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 14px 28px; border-radius: var(--radius); font-size: 1rem; font-weight: 600; cursor: pointer; border: none; transition: opacity .15s; text-decoration: none; width: 100%; }
+  .btn:hover { opacity: .85; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-outline { background: transparent; color: var(--text); border: 1.5px solid var(--border); }
+
+  .divider { text-align: center; color: var(--muted); font-size: 0.85rem; margin: 28px 0; display: flex; align-items: center; gap: 12px; }
+  .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  /* Login */
+  #sectionLogin { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; }
+  #sectionLogin h2 { margin-bottom: 6px; }
+  #sectionLogin p  { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
+  .field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .field input { width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 1rem; background: var(--bg); color: var(--text); outline: none; transition: border-color .15s; }
+  .field input:focus { border-color: var(--accent); }
+  .field { margin-bottom: 16px; }
+
+  /* Dashboard */
+  #sectionDashboard { display: none; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; }
+  .card h2 { font-size: 1rem; margin-bottom: 16px; }
+  .info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.93rem; }
+  .info-row:last-child { border-bottom: none; }
+  .info-row .label { color: var(--muted); }
+  .info-row .value { font-weight: 600; }
+  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; }
+  .status-active    { background: #d1fae5; color: #065f46; }
+  .status-cancelled { background: #fee2e2; color: #991b1b; }
+  .status-paused    { background: #fef3c7; color: #92400e; }
+
+  .discount-info { background: var(--bg); border-radius: 8px; padding: 16px; text-align: center; }
+  .discount-name { font-size: 1.5rem; font-weight: 800; color: var(--accent); letter-spacing: 2px; }
+  .discount-hint { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
+
+  .cancel-zone { background: #fff8f8; border: 1px solid #fca5a5; border-radius: var(--radius); padding: 20px; }
+  .cancel-zone h3 { font-size: 0.95rem; margin-bottom: 6px; }
+  .cancel-zone p  { font-size: 0.85rem; color: var(--muted); margin-bottom: 14px; }
+  .btn-danger { background: #dc2626; color: #fff; }
+
+  /* Alerts */
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 16px; display: none; }
+  .alert.show { display: block; }
+  .alert.error   { background: #fef2f4; border: 1px solid #fca5a5; color: #dc2626; }
+  .alert.success { background: #f0fdf4; border: 1px solid #86efac; color: #15803d; }
+
+  .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Balance Gaming FL — <span>Elite</span> Membership</h1>
+</header>
+
+<div class="container">
+
+  <!-- Landing -->
+  <div id="sectionLanding">
+    <div class="hero-badge">Elite Membership</div>
+    <h1 class="hero-title">Your competitive advantage starts here</h1>
+    <p class="hero-sub">Exclusive perks for Balance Gaming FL members.</p>
+
+    <div class="pricing-card">
+      <h3>Elite Membership</h3>
+      <div class="price-row">
+        <span class="price-big">$15</span>
+        <span class="price-note">today (one-time initiation fee)</span>
+      </div>
+      <div class="price-then">then <strong>$10 / month</strong>, billed automatically — cancel anytime</div>
+    </div>
+
+    <ul class="perks">
+      <li>
+        <span class="perk-icon">%</span>
+        <div>
+          <strong>10% off sealed product</strong>
+          <p>Your Elite10 discount applies automatically at checkout when you're logged into your account</p>
+        </div>
+      </li>
+      <li>
+        <span class="perk-icon">★</span>
+        <div>
+          <strong>Elite Member status</strong>
+          <p>Tagged on your account for future member-only perks</p>
+        </div>
+      </li>
+      <li>
+        <span class="perk-icon">↩</span>
+        <div>
+          <strong>Cancel anytime</strong>
+          <p>No long-term commitment — manage your membership from this portal</p>
+        </div>
+      </li>
+    </ul>
+
+    <a id="joinBtn" href="#" onclick="openShopifyJoin(event)" class="btn btn-primary" style="margin-bottom:16px">Join Now — $15 Today</a>
+
+    <div class="divider">Already a member?</div>
+
+    <div id="sectionLogin">
+      <h2>Access your member portal</h2>
+      <p>Enter your email and we'll send you a secure login link.</p>
+      <div id="loginAlert" class="alert"></div>
+      <div class="field">
+        <label>Email address</label>
+        <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email"
+          onkeydown="if(event.key==='Enter') sendMagicLink()">
+      </div>
+      <button class="btn btn-primary" id="loginBtn" onclick="sendMagicLink()">Send Login Link</button>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="sectionDashboard">
+    <div id="dashAlert" class="alert"></div>
+
+    <div class="card">
+      <h2>Your Membership</h2>
+      <div class="info-row">
+        <span class="label">Status</span>
+        <span class="value" id="dStatus"></span>
+      </div>
+      <div class="info-row">
+        <span class="label">Plan</span>
+        <span class="value">Elite — $10 / month</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Member since</span>
+        <span class="value" id="dStarted"></span>
+      </div>
+      <div class="info-row">
+        <span class="label">Next billing</span>
+        <span class="value" id="dNextBilling"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Your Member Discount</h2>
+      <div class="discount-info">
+        <div class="discount-name">Elite10</div>
+        <div class="discount-hint">10% off sealed products — automatically applied at checkout<br>when you're logged into your account</div>
+      </div>
+    </div>
+
+    <div class="cancel-zone" id="cancelZone">
+      <h3>Cancel Membership</h3>
+      <p>Your Elite10 discount will stop applying at checkout. Cancellation takes effect immediately.</p>
+      <button class="btn btn-danger" id="cancelBtn" onclick="confirmCancel()">Cancel Membership</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API = '/api/membership';
+let _token = null;
+
+function openShopifyJoin(e) {
+  e.preventDefault();
+  const url = window.MEMBERSHIP_PRODUCT_URL || '#';
+  if (url === '#') { alert('Membership signup is not available yet. Please contact Balance Gaming FL.'); return; }
+  window.location.href = url;
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const params   = new URLSearchParams(window.location.search);
+  const urlToken = params.get('token');
+  if (urlToken) {
+    history.replaceState({}, '', window.location.pathname);
+    localStorage.setItem('memberToken', urlToken);
+    _token = urlToken;
+    await loadDashboard();
+    return;
+  }
+  const stored = localStorage.getItem('memberToken');
+  if (stored) { _token = stored; await loadDashboard(); }
+});
+
+async function loadDashboard() {
+  try {
+    const res = await fetch(`${API}/me`, { headers: { 'Authorization': `Bearer ${_token}` } });
+    if (!res.ok) { localStorage.removeItem('memberToken'); _token = null; return; }
+    showDashboard(await res.json());
+  } catch { localStorage.removeItem('memberToken'); }
+}
+
+function showDashboard(m) {
+  document.getElementById('sectionLanding').style.display   = 'none';
+  document.getElementById('sectionDashboard').style.display = 'block';
+
+  const cls = m.status === 'active' ? 'status-active' : m.status === 'paused' ? 'status-paused' : 'status-cancelled';
+  document.getElementById('dStatus').innerHTML = `<span class="status-badge ${cls}">${m.status}</span>`;
+
+  const fmt = iso => iso ? new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+  document.getElementById('dStarted').textContent     = fmt(m.startedAt);
+  document.getElementById('dNextBilling').textContent = fmt(m.nextBillingDate);
+
+  if (m.status !== 'active') {
+    document.getElementById('cancelZone').style.display = 'none';
+    if (m.status === 'cancelled') {
+      showAlert('dashAlert', 'Your membership is cancelled. Elite10 will no longer apply at checkout.', 'error');
+    }
+  }
+}
+
+async function sendMagicLink() {
+  clearAlert('loginAlert');
+  const email = document.getElementById('loginEmail').value.trim();
+  if (!email) return showAlert('loginAlert', 'Please enter your email address.', 'error');
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    await fetch(`${API}/send-magic-link`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    showAlert('loginAlert', "If that email has an active membership, you'll receive a login link shortly.", 'success');
+    document.getElementById('loginEmail').value = '';
+  } catch {
+    showAlert('loginAlert', 'Something went wrong. Please try again.', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Send Login Link';
+  }
+}
+
+async function confirmCancel() {
+  if (!confirm('Cancel your Elite Membership? Your Elite10 discount will stop working immediately.')) return;
+  const btn = document.getElementById('cancelBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const res  = await fetch(`${API}/cancel`, {
+      method: 'POST', headers: { 'Authorization': `Bearer ${_token}`, 'Content-Type': 'application/json' },
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert('dashAlert', data.error || 'Failed to cancel. Please contact support.', 'error'); return; }
+    showAlert('dashAlert', "Your membership has been cancelled. You'll receive a confirmation email.", 'success');
+    document.getElementById('cancelZone').style.display = 'none';
+    document.getElementById('dStatus').innerHTML = '<span class="status-badge status-cancelled">cancelled</span>';
+  } catch {
+    showAlert('dashAlert', 'Something went wrong. Please try again.', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Cancel Membership';
+  }
+}
+
+function showAlert(id, msg, type = 'error') {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = `alert ${type} show`;
+}
+function clearAlert(id) {
+  const el = document.getElementById(id);
+  el.className = 'alert'; el.textContent = '';
+}
+</script>
+</body>
+</html>

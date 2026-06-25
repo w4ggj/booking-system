@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin — Balance Membership</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:      #f5f5f7;
+    --surface: #ffffff;
+    --border:  #e0e0e8;
+    --text:    #1a1a2e;
+    --muted:   #777;
+    --accent:  #e94560;
+    --radius:  10px;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* Login */
+  #pageLogin { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  .login-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 36px; width: 100%; max-width: 380px; }
+  .login-card h1 { font-size: 1.3rem; margin-bottom: 4px; }
+  .login-card p  { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
+
+  /* App */
+  #pageApp { display: none; }
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 1rem; font-weight: 700; }
+  header span { color: var(--accent); }
+  .main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+  .stat-card .label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .stat-card .value { font-size: 2rem; font-weight: 800; margin-top: 4px; }
+  .stat-card .value.accent { color: var(--accent); }
+
+  /* Table */
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .table-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .table-header h2 { font-size: 1rem; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+  th { text-align: left; padding: 10px 16px; background: var(--bg); color: var(--muted); font-size: 0.74rem; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  td { padding: 12px 16px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafafa; }
+  .text-muted { color: var(--muted); }
+
+  .status-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .status-active    { background: #d1fae5; color: #065f46; }
+  .status-cancelled { background: #fee2e2; color: #991b1b; }
+  .status-paused    { background: #fef3c7; color: #92400e; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 7px; font-size: 0.82rem; font-weight: 600; cursor: pointer; border: none; transition: opacity .15s; }
+  .btn:hover { opacity: .8; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #fff; padding: 12px 20px; font-size: 1rem; }
+  .btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+  .btn-sm      { padding: 5px 10px; font-size: 0.78rem; }
+  .btn-danger  { background: #dc2626; color: #fff; }
+  .btn-ghost   { background: #f3f4f6; color: var(--text); }
+
+  /* Form */
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .field input { width: 100%; padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.95rem; background: var(--bg); color: var(--text); outline: none; }
+  .field input:focus { border-color: var(--accent); }
+
+  /* Alert */
+  .alert { padding: 11px 15px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 16px; display: none; }
+  .alert.show { display: block; }
+  .alert.error   { background: #fef2f4; border: 1px solid #fca5a5; color: #dc2626; }
+  .alert.success { background: #f0fdf4; border: 1px solid #86efac; color: #15803d; }
+
+  /* Spinner */
+  .spinner       { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  .spinner-dark  { border-color: rgba(0,0,0,.12); border-top-color: var(--text); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Modal */
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-backdrop.show { display: flex; }
+  .modal { background: var(--surface); border-radius: var(--radius); padding: 28px; width: 100%; max-width: 420px; }
+  .modal h2 { margin-bottom: 8px; }
+  .modal p  { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="pageLogin">
+  <div class="login-card">
+    <h1>Membership Admin</h1>
+    <p>Balance Gaming FL</p>
+    <div id="loginAlert" class="alert error"></div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="Admin password"
+        onkeydown="if(event.key==='Enter') doLogin()">
+    </div>
+    <button class="btn btn-primary" id="loginBtn" onclick="doLogin()" style="width:100%">Sign In</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="pageApp">
+  <header>
+    <h1>Balance Gaming FL — <span>Elite</span> Membership</h1>
+    <button class="btn btn-outline btn-sm" onclick="logout()">Sign Out</button>
+  </header>
+
+  <div class="main">
+    <div id="appAlert" class="alert"></div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <div class="label">Active Members</div>
+        <div class="value accent" id="statActive">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Cancelled</div>
+        <div class="value" id="statCancelled">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Est. Monthly Revenue</div>
+        <div class="value accent" id="statRevenue">—</div>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-header">
+        <h2>Members</h2>
+        <button class="btn btn-outline btn-sm" onclick="loadMembers()">↻ Refresh</button>
+      </div>
+      <div id="tableBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel confirmation modal -->
+<div class="modal-backdrop" id="modalCancel">
+  <div class="modal">
+    <h2>Cancel Membership</h2>
+    <p id="modalCancelText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal('modalCancel')">Keep Active</button>
+      <button class="btn btn-danger" id="modalCancelConfirm">Yes, Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api/admin';
+let _token   = localStorage.getItem('memberAdminToken');
+let _members = [];
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+async function doLogin() {
+  clearAlert('loginAlert');
+  const password = document.getElementById('loginPass').value;
+  if (!password) return;
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const res  = await fetch(`${API}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
+    const data = await res.json();
+    if (!res.ok) { showAlert('loginAlert', data.error || 'Incorrect password', 'error'); return; }
+    _token = data.token;
+    localStorage.setItem('memberAdminToken', _token);
+    showApp();
+  } catch { showAlert('loginAlert', 'Connection error', 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Sign In'; }
+}
+
+function logout() {
+  localStorage.removeItem('memberAdminToken');
+  _token = null;
+  document.getElementById('pageApp').style.display   = 'none';
+  document.getElementById('pageLogin').style.display = 'flex';
+}
+
+function showApp() {
+  document.getElementById('pageLogin').style.display = 'none';
+  document.getElementById('pageApp').style.display   = 'block';
+  loadMembers();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  if (_token) {
+    fetch(`${API}/members`, { headers: { 'Authorization': `Bearer ${_token}` } })
+      .then(r => { if (r.ok) showApp(); else { localStorage.removeItem('memberAdminToken'); } })
+      .catch(() => {});
+  }
+});
+
+// ── Members ───────────────────────────────────────────────────────────────
+async function loadMembers() {
+  document.getElementById('tableBody').innerHTML =
+    '<div style="padding:32px;text-align:center"><span class="spinner spinner-dark"></span></div>';
+  try {
+    const res  = await apiFetch(`${API}/members`);
+    const data = await res.json();
+    if (!res.ok) { showAlert('appAlert', data.error || 'Failed to load', 'error'); return; }
+    _members = data.members || [];
+    renderStats(_members);
+    renderTable(_members);
+  } catch { showAlert('appAlert', 'Failed to load members', 'error'); }
+}
+
+function renderStats(members) {
+  const active    = members.filter(m => m.status === 'active').length;
+  const cancelled = members.filter(m => m.status === 'cancelled').length;
+  document.getElementById('statActive').textContent    = active;
+  document.getElementById('statCancelled').textContent = cancelled;
+  document.getElementById('statRevenue').textContent   = `$${(active * 10).toLocaleString()}`;
+}
+
+function renderTable(members) {
+  const body = document.getElementById('tableBody');
+  if (!members.length) {
+    body.innerHTML = '<div class="empty-state">No members yet.</div>';
+    return;
+  }
+  const fmt = iso => iso
+    ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    : '—';
+
+  body.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Member</th>
+          <th>Status</th>
+          <th>Joined</th>
+          <th>Next Billing</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${members.map(m => `
+          <tr>
+            <td>
+              <div style="font-weight:600">${esc(m.name || '—')}</div>
+              <div class="text-muted" style="font-size:0.8rem">${esc(m.email)}</div>
+            </td>
+            <td><span class="status-badge status-${m.status}">${m.status}</span></td>
+            <td class="text-muted">${fmt(m.startedAt)}</td>
+            <td class="text-muted">${fmt(m.nextBillingDate)}</td>
+            <td>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                ${m.status === 'active'
+                  ? `<button class="btn btn-danger btn-sm" onclick="openCancel('${esc(m.id)}','${esc(m.email)}')">Cancel</button>`
+                  : `<button class="btn btn-ghost btn-sm" onclick="setStatus('${esc(m.id)}','active')">Reactivate</button>`
+                }
+                <button class="btn btn-ghost btn-sm" onclick="deleteRecord('${esc(m.id)}','${esc(m.email)}')">Delete Record</button>
+              </div>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>`;
+}
+
+// ── Cancel modal ──────────────────────────────────────────────────────────
+function openCancel(id, email) {
+  document.getElementById('modalCancelText').textContent =
+    `This will cancel ${email}'s Shopify subscription and remove their elite-member tag. The Elite10 discount will stop applying at checkout.`;
+  const btn = document.getElementById('modalCancelConfirm');
+  btn.onclick = () => cancelMember(id);
+  document.getElementById('modalCancel').classList.add('show');
+}
+
+async function cancelMember(id) {
+  const btn = document.getElementById('modalCancelConfirm');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const res  = await apiFetch(`${API}/members/${encodeURIComponent(id)}/cancel-subscription`, { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) showAlert('appAlert', data.error || 'Failed to cancel', 'error');
+    else showAlert('appAlert', 'Subscription cancelled. Webhook will update member status.', 'success');
+    closeModal('modalCancel');
+    setTimeout(loadMembers, 2500);
+  } catch { showAlert('appAlert', 'Failed to cancel', 'error'); }
+  finally { btn.disabled = false; btn.textContent = 'Yes, Cancel'; }
+}
+
+// ── Reactivate ────────────────────────────────────────────────────────────
+async function setStatus(id, status) {
+  if (!confirm(`Set member status to "${status}"? This updates the record and re-tags the customer.`)) return;
+  try {
+    const res  = await apiFetch(`${API}/members/${encodeURIComponent(id)}/status`, {
+      method: 'PUT', body: JSON.stringify({ status }),
+    });
+    const data = await res.json();
+    if (!res.ok) showAlert('appAlert', data.error || 'Failed', 'error');
+    else { showAlert('appAlert', 'Status updated.', 'success'); loadMembers(); }
+  } catch { showAlert('appAlert', 'Failed', 'error'); }
+}
+
+// ── Delete record ─────────────────────────────────────────────────────────
+async function deleteRecord(id, email) {
+  if (!confirm(`Delete the member record for ${email}? This does NOT cancel their Shopify subscription — cancel first if needed.`)) return;
+  try {
+    const res  = await apiFetch(`${API}/members/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (!res.ok) showAlert('appAlert', data.error || 'Failed', 'error');
+    else { showAlert('appAlert', 'Record deleted.', 'success'); loadMembers(); }
+  } catch { showAlert('appAlert', 'Failed', 'error'); }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-backdrop').forEach(el =>
+  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('show'); })
+);
+
+function apiFetch(url, opts = {}) {
+  return fetch(url, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${_token}`, ...(opts.headers || {}) },
+  });
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showAlert(id, msg, type = 'error') {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = `alert ${type} show`;
+  setTimeout(() => { el.className = 'alert'; }, 7000);
+}
+function clearAlert(id) {
+  const el = document.getElementById(id); el.className = 'alert'; el.textContent = '';
+}
+</script>
+</body>
+</html>
