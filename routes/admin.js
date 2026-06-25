@@ -121,8 +121,8 @@ router.put('/settings', verifyToken, async (req, res) => {
     });
     res.json({ success: true });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to update settings' });
+    console.error('updateSettings error:', err);
+    res.status(500).json({ error: err.message || 'Failed to update settings' });
   }
 });
 

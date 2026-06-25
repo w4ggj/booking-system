@@ -35,17 +35,20 @@ async function getSettings() {
 }
 
 async function updateSettings(updates) {
-  // Bypass cache so we always have the real metaobject ID from Shopify
-  _cache = null;
-  _cacheTime = 0;
-  const current = await getSettings();
+  // If cache has no id (cold-start failure), force a fresh fetch to get it
+  if (!_cache || !_cache.id) {
+    _cache = null;
+    _cacheTime = 0;
+    await getSettings();
+  }
 
-  if (!current.id) {
-    throw new Error('booking_config metaobject not found in Shopify. Re-run setup.');
+  const id = _cache && _cache.id;
+  if (!id) {
+    throw new Error('booking_config metaobject not found in Shopify — re-run setup');
   }
 
   const KEYS = ['hourly_rate', 'weekday_full_day_price', 'weekend_full_day_price', 'full_day_enabled'];
-  const merged = { ...DEFAULTS, ...current, ...updates };
+  const merged = { ...DEFAULTS, ...(_cache || {}), ...updates };
   const fields = KEYS.map(k => ({ key: k, value: String(merged[k]) }));
 
   const data = await shopifyGraphQL(`
@@ -55,13 +58,13 @@ async function updateSettings(updates) {
         userErrors { field message }
       }
     }
-  `, { id: current.id, metaobject: { fields } });
+  `, { id, metaobject: { fields } });
 
   const { userErrors } = data.metaobjectUpdate;
   if (userErrors.length) throw new Error(JSON.stringify(userErrors));
 
-  // Populate cache with the saved values so reads within 5 min are instant
-  _cache = { id: current.id, ...merged };
+  // Refresh cache with saved values so next read is instant
+  _cache = { id, ...merged };
   _cacheTime = Date.now();
 }
 
