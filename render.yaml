@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: balance-booking
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SHOPIFY_SHOP
+        value: d94663-4.myshopify.com
+      - key: SHOPIFY_ACCESS_TOKEN
+        sync: false
+      - key: SHOPIFY_API_SECRET
+        sync: false
+      - key: GMAIL_USER
+        value: balance.ma.gaming@gmail.com
+      - key: GMAIL_APP_PASSWORD
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: BASE_URL
+        value: https://balance-booking.onrender.com
