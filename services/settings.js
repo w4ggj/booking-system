@@ -21,12 +21,14 @@ async function getSettings() {
     `);
     const nodes = data.metaobjects.nodes;
     if (!nodes.length) {
+      console.warn('getSettings: query succeeded but 0 booking_config nodes returned');
       _cache = { ...DEFAULTS };
     } else {
       const fields = nodes[0].fields.reduce((acc, f) => { acc[f.key] = f.value; return acc; }, {});
       _cache = { id: nodes[0].id, ...DEFAULTS, ...fields };
     }
-  } catch {
+  } catch (err) {
+    console.error('getSettings Shopify error:', err.message);
     _cache = { ...DEFAULTS };
   }
 
