@@ -33,6 +33,19 @@ app.get('/api/settings', async (_req, res) => {
   }
 });
 
+// Temporary debug: check if server can reach booking_config metaobject
+app.get('/api/debug/settings', async (_req, res) => {
+  try {
+    const { shopifyGraphQL } = require('./services/shopify');
+    const data = await shopifyGraphQL(
+      `query { metaobjects(type: "booking_config", first: 1) { nodes { id fields { key value } } } }`
+    );
+    res.json({ ok: true, shop: process.env.SHOPIFY_SHOP, nodes: data.metaobjects.nodes });
+  } catch (err) {
+    res.json({ ok: false, shop: process.env.SHOPIFY_SHOP, error: err.message });
+  }
+});
+
 // SPA fallback: /admin/* → admin panel, everything else → booking form
 app.get('/admin*', (_req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html')));
