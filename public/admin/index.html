@@ -138,6 +138,7 @@ select option{background:var(--surface)}
   <div class="tabs">
     <div class="tab active" onclick="switchTab('reservations')">Reservations</div>
     <div class="tab" onclick="switchTab('blocked')">Blocked Slots</div>
+    <div class="tab" onclick="switchTab('settings')">Settings</div>
   </div>
 
   <!-- ── RESERVATIONS PANEL ── -->
@@ -157,6 +158,36 @@ select option{background:var(--surface)}
           </div>
         </div>
         <div id="resTableWrap"><div class="table-empty"><span class="spinner"></span></div></div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS PANEL ── -->
+    <div class="panel" id="panelSettings">
+      <div id="settingsAlert" class="alert error"></div>
+      <div class="form-card">
+        <h2>Pricing</h2>
+        <div class="form-row">
+          <div class="field">
+            <label>Hourly Rate ($)</label>
+            <input type="number" id="setHourlyRate" min="0" step="1">
+          </div>
+          <div class="field">
+            <label>Weekday Full Day Price ($)</label>
+            <input type="number" id="setWeekdayFDP" min="0" step="1">
+          </div>
+          <div class="field">
+            <label>Weekend Full Day Price ($)</label>
+            <input type="number" id="setWeekendFDP" min="0" step="1">
+          </div>
+        </div>
+        <h2 style="margin-top:20px">Full Day Option</h2>
+        <div style="display:flex;align-items:center;gap:14px;margin-top:14px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px">
+            <input type="checkbox" id="setFullDayEnabled" style="width:18px;height:18px;accent-color:var(--accent);cursor:pointer">
+            Show Full Day booking option to customers
+          </label>
+        </div>
+        <button class="btn btn-primary mt-12" onclick="saveSettings()" id="saveSettingsBtn" style="margin-top:20px">Save Settings</button>
       </div>
     </div>
 
@@ -304,10 +335,50 @@ if (token) {
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────
+const TAB_NAMES = ['reservations','blocked','settings'];
 function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', ['reservations','blocked'][i]===name));
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', TAB_NAMES[i]===name));
   document.getElementById('panelReservations').classList.toggle('active', name==='reservations');
   document.getElementById('panelBlocked').classList.toggle('active', name==='blocked');
+  document.getElementById('panelSettings').classList.toggle('active', name==='settings');
+  if (name === 'settings') loadSettingsPanel();
+}
+
+// ── Settings ──────────────────────────────────────────────────────────────
+async function loadSettingsPanel() {
+  clearAlert('settingsAlert');
+  try {
+    const res = await apiFetch(`${API}/settings`);
+    const data = await res.json();
+    if (!res.ok) { showAlert('settingsAlert', data.error); return; }
+    document.getElementById('setHourlyRate').value    = data.hourlyRate;
+    document.getElementById('setWeekdayFDP').value    = data.weekdayFullDayPrice;
+    document.getElementById('setWeekendFDP').value    = data.weekendFullDayPrice;
+    document.getElementById('setFullDayEnabled').checked = data.fullDayEnabled;
+  } catch { showAlert('settingsAlert', 'Failed to load settings.'); }
+}
+
+async function saveSettings() {
+  clearAlert('settingsAlert');
+  const hourlyRate          = parseFloat(document.getElementById('setHourlyRate').value);
+  const weekdayFullDayPrice = parseFloat(document.getElementById('setWeekdayFDP').value);
+  const weekendFullDayPrice = parseFloat(document.getElementById('setWeekendFDP').value);
+  const fullDayEnabled      = document.getElementById('setFullDayEnabled').checked;
+  if (isNaN(hourlyRate) || isNaN(weekdayFullDayPrice) || isNaN(weekendFullDayPrice)) {
+    return showAlert('settingsAlert', 'All prices must be valid numbers.');
+  }
+  const btn = document.getElementById('saveSettingsBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const res = await apiFetch(`${API}/settings`, {
+      method: 'PUT',
+      body: JSON.stringify({ hourlyRate, weekdayFullDayPrice, weekendFullDayPrice, fullDayEnabled }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showAlert('settingsAlert', data.error||'Failed to save.'); return; }
+    showAlert('settingsAlert', 'Settings saved. Changes take effect within 5 minutes.', 'success');
+  } catch { showAlert('settingsAlert', 'Network error.'); }
+  finally { btn.disabled = false; btn.textContent = 'Save Settings'; }
 }
 
 // ── Reservations ──────────────────────────────────────────────────────────

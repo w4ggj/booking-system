@@ -18,6 +18,21 @@ app.use('/api/checkout',     require('./routes/checkout'));
 app.use('/api/webhooks',     require('./routes/webhooks'));
 app.use('/api/admin',        require('./routes/admin'));
 
+app.get('/api/settings', async (_req, res) => {
+  try {
+    const { getSettings } = require('./services/settings');
+    const s = await getSettings();
+    res.json({
+      hourlyRate:           parseFloat(s.hourly_rate)             || 10,
+      weekdayFullDayPrice:  parseFloat(s.weekday_full_day_price)  || 30,
+      weekendFullDayPrice:  parseFloat(s.weekend_full_day_price)  || 50,
+      fullDayEnabled:       s.full_day_enabled !== 'false',
+    });
+  } catch {
+    res.json({ hourlyRate: 10, weekdayFullDayPrice: 30, weekendFullDayPrice: 50, fullDayEnabled: true });
+  }
+});
+
 // SPA fallback: /admin/* → admin panel, everything else → booking form
 app.get('/admin*', (_req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html')));

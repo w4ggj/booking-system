@@ -6,6 +6,7 @@ const {
   getAllBlockedSlots, createBlockedSlot, deleteMetaobject,
 } = require('../services/metaobjects');
 const { sendAdminMessage } = require('../services/email');
+const { getSettings, updateSettings } = require('../services/settings');
 
 // POST /api/admin/login
 router.post('/login', (req, res) => {
@@ -89,6 +90,39 @@ router.post('/message', verifyToken, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Failed to send message' });
+  }
+});
+
+// GET /api/admin/settings
+router.get('/settings', verifyToken, async (req, res) => {
+  try {
+    const s = await getSettings();
+    res.json({
+      hourlyRate:          parseFloat(s.hourly_rate)            || 10,
+      weekdayFullDayPrice: parseFloat(s.weekday_full_day_price) || 30,
+      weekendFullDayPrice: parseFloat(s.weekend_full_day_price) || 50,
+      fullDayEnabled:      s.full_day_enabled !== 'false',
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to load settings' });
+  }
+});
+
+// PUT /api/admin/settings
+router.put('/settings', verifyToken, async (req, res) => {
+  try {
+    const { hourlyRate, weekdayFullDayPrice, weekendFullDayPrice, fullDayEnabled } = req.body;
+    await updateSettings({
+      hourly_rate:              String(hourlyRate),
+      weekday_full_day_price:   String(weekdayFullDayPrice),
+      weekend_full_day_price:   String(weekendFullDayPrice),
+      full_day_enabled:         fullDayEnabled ? 'true' : 'false',
+    });
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update settings' });
   }
 });
 

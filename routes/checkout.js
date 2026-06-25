@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const { shopifyGraphQL } = require('../services/shopify');
-const { getDayOfWeek, calcPrice, timeToMinutes, SCHEDULE } = require('../config/schedule');
+const { getDayOfWeek, timeToMinutes, SCHEDULE } = require('../config/schedule');
 const { getReservationsForDate, getBlockedSlotsForDate } = require('../services/metaobjects');
+const { getSettings } = require('../services/settings');
 
 function fmt12(t) {
   const [h, m] = t.split(':').map(Number);
@@ -55,8 +56,19 @@ router.post('/', async (req, res) => {
       return res.status(409).json({ error: 'That time slot was just booked. Please select another.' });
     }
 
-    const fullDay = isFullDay === true || isFullDay === 'true';
-    const price   = calcPrice(dow, parseInt(durationHours, 10), fullDay);
+    const fullDay  = isFullDay === true || isFullDay === 'true';
+    const settings = await getSettings();
+    const hourlyRate    = parseFloat(settings.hourly_rate)            || 10;
+    const weekdayFDP    = parseFloat(settings.weekday_full_day_price) || 30;
+    const weekendFDP    = parseFloat(settings.weekend_full_day_price) || 50;
+    const fullDayEnabled = settings.full_day_enabled !== 'false';
+
+    if (fullDay && !fullDayEnabled) {
+      return res.status(400).json({ error: 'Full day booking is not currently available.' });
+    }
+
+    const isWeekend = dow === 0 || dow === 6;
+    const price = fullDay ? (isWeekend ? weekendFDP : weekdayFDP) : parseInt(durationHours, 10) * hourlyRate;
 
     const timeDisplay = fullDay
       ? `Full Day (${fmt12(startTime)} – ${fmt12(endTime)})`

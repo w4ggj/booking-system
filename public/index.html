@@ -174,6 +174,28 @@ input[type=date]{color-scheme:dark}
 <script>
 const API = '';
 let state = { date: null, duration: null, isFullDay: false, startTime: null, endTime: null, price: 0 };
+let _settings = { hourlyRate: 10, weekdayFullDayPrice: 30, weekendFullDayPrice: 50, fullDayEnabled: true };
+
+async function loadSettings() {
+  try {
+    const res = await fetch(`${API}/api/settings`);
+    _settings = await res.json();
+  } catch {}
+  // Update hourly chip prices
+  document.querySelectorAll('#durationChips .chip[data-full-day="false"]').forEach(btn => {
+    const h = parseInt(btn.dataset.hours);
+    const span = btn.querySelector('span');
+    if (span) span.textContent = `$${h * _settings.hourlyRate}`;
+  });
+  // Show/hide Full Day chip
+  const fdChip = document.querySelector('#durationChips .chip[data-full-day="true"]');
+  if (fdChip) {
+    fdChip.style.display = _settings.fullDayEnabled ? '' : 'none';
+    const span = document.getElementById('fullDayPriceChip');
+    if (span) span.textContent = `Wkday $${_settings.weekdayFullDayPrice} · Wkend $${_settings.weekendFullDayPrice}`;
+  }
+}
+loadSettings();
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 function fmt12(t) {
@@ -250,7 +272,7 @@ document.getElementById('datePicker').addEventListener('change', async function(
   // For Full Day, determine price from day of week
   if (state.isFullDay) {
     const dow = getDayOfWeek(state.date);
-    state.price = (dow === 0 || dow === 6) ? 50 : 30;
+    state.price = (dow === 0 || dow === 6) ? _settings.weekendFullDayPrice : _settings.weekdayFullDayPrice;
   }
 
   const wrap = document.getElementById('slotsWrap');
