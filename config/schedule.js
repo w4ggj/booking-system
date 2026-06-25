@@ -20,7 +20,7 @@ const FULL_DAY_PRICE = {
   6: 50,
 };
 
-const HOURLY_RATE = 0; // TEST ONLY — change back to 10 after testing
+const HOURLY_RATE = 10;
 const MIN_HOURS = 2;
 
 // Derive day-of-week safely from a YYYY-MM-DD string (avoids UTC offset issues)
