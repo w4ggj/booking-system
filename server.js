@@ -17,6 +17,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.use('/auth',             require('./routes/auth'));
 app.use('/api/availability', require('./routes/availability'));
 app.use('/api/checkout',     require('./routes/checkout'));
 app.use('/api/webhooks',     require('./routes/webhooks'));

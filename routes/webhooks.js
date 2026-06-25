@@ -5,7 +5,7 @@ const { createReservation, reservationExistsForOrder } = require('../services/me
 const { sendConfirmationEmail } = require('../services/email');
 
 function verifyShopifyHmac(rawBody, hmacHeader) {
-  const secret = process.env.SHOPIFY_API_SECRET;
+  const secret = process.env.SHOPIFY_CLIENT_SECRET;
   if (!secret || !hmacHeader) return false;
   const computed = crypto.createHmac('sha256', secret).update(rawBody, 'utf8').digest('base64');
   try {

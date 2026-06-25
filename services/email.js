@@ -2,15 +2,22 @@ const nodemailer = require('nodemailer');
 
 function transporter() {
   return nodemailer.createTransport({
-    service: 'gmail',
-    auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
+    host: process.env.SMTP_HOST || 'smtp-mail.outlook.com',
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+    tls: { ciphers: 'SSLv3', rejectUnauthorized: false },
   });
 }
 
+const FROM = () => `Balance Gaming FL <${process.env.FROM_EMAIL || process.env.SMTP_USER}>`;
+
 function fmt12(t) {
   const [h, m] = t.split(':').map(Number);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
 }
 
 function fmtDateLong(dateStr) {
@@ -33,7 +40,7 @@ async function sendConfirmationEmail({ customerEmail, customerName, date, startT
   </div>
 
   <div style="background:#1a1a2e;border-left:4px solid #e94560;border-radius:8px;padding:20px 24px;margin-bottom:24px;">
-    <h2 style="color:#e94560;margin:0 0 8px;font-size:18px;">✅ Reservation Confirmed</h2>
+    <h2 style="color:#e94560;margin:0 0 8px;font-size:18px;">&#x2705; Reservation Confirmed</h2>
     <p style="margin:0;color:#bbb;">Hi ${customerName}, your booking is confirmed and paid.</p>
   </div>
 
@@ -63,13 +70,13 @@ async function sendConfirmationEmail({ customerEmail, customerName, date, startT
   </div>
 
   <div style="text-align:center;color:#555;font-size:12px;">
-    <p>Questions? Email us at <a href="mailto:${process.env.GMAIL_USER}" style="color:#e94560;">${process.env.GMAIL_USER}</a></p>
+    <p>Questions? Email us at <a href="mailto:${process.env.FROM_EMAIL}" style="color:#e94560;">${process.env.FROM_EMAIL}</a></p>
     <p>Balance Gaming FL &mdash; Secret Lair Lounge</p>
   </div>
 </div>`;
 
   await transporter().sendMail({
-    from: `Balance Gaming FL <${process.env.GMAIL_USER}>`,
+    from: FROM(),
     to: customerEmail,
     subject: `Booking Confirmed – ${fmtDateLong(date)} | Balance Gaming FL`,
     html,
@@ -92,7 +99,7 @@ async function sendAdminMessage({ customerEmail, customerName, subject, message 
 </div>`;
 
   await transporter().sendMail({
-    from: `Balance Gaming FL <${process.env.GMAIL_USER}>`,
+    from: FROM(),
     to: customerEmail,
     subject,
     html,
