@@ -7,6 +7,7 @@ const { getSettings } = require('../services/settings');
 
 function fmt12(t) {
   const [h, m] = t.split(':').map(Number);
+  if (h === 24) return '12:00 AM';
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
 }
 

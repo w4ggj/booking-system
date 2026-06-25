@@ -1,12 +1,12 @@
 // Operating hours per day (0=Sun, 1=Mon, ..., 6=Sat)
 const SCHEDULE = {
-  0: { start: '12:00', end: '20:00', name: 'Sunday' },
+  0: { start: '12:00', end: '22:00', name: 'Sunday' },
   1: { start: '16:00', end: '20:00', name: 'Monday' },
   2: { start: '16:00', end: '20:00', name: 'Tuesday' },
   3: { start: '16:00', end: '20:00', name: 'Wednesday' },
   4: { start: '16:00', end: '20:00', name: 'Thursday' },
   5: { start: '16:00', end: '20:00', name: 'Friday' },
-  6: { start: '11:00', end: '20:00', name: 'Saturday' },
+  6: { start: '11:00', end: '24:00', name: 'Saturday' },
 };
 
 // Flat-rate full-day prices (discounted vs. hourly)

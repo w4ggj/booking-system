@@ -115,13 +115,9 @@ input[type=date]{color-scheme:light}
 
   <!-- Step 1: Duration -->
   <div class="section visible" id="secDuration">
-    <div class="section-title"><span>1</span> Choose Duration <span class="price-tag">$10/hr</span></div>
-    <div class="chips" id="durationChips">
-      <button class="chip" data-hours="2" data-full-day="false">2 Hours <span style="color:var(--muted);font-size:12px;margin-left:4px">$20</span></button>
-      <button class="chip" data-hours="3" data-full-day="false">3 Hours <span style="color:var(--muted);font-size:12px;margin-left:4px">$30</span></button>
-      <button class="chip" data-hours="4" data-full-day="false">4 Hours <span style="color:var(--muted);font-size:12px;margin-left:4px">$40</span></button>
-      <button class="chip full-day" data-hours="4" data-full-day="true">Full Day <span id="fullDayPriceChip" style="color:var(--muted);font-size:12px;margin-left:4px">Wkday $30 · Wkend $50</span></button>
-    </div>
+    <div class="section-title"><span>1</span> Choose Duration</div>
+    <div class="chips" id="durationChips"></div>
+    <p style="font-size:12px;color:var(--muted);margin-top:10px">Mon–Fri max 4 hrs &nbsp;|&nbsp; Sat max 13 hrs &nbsp;|&nbsp; Sun max 10 hrs</p>
   </div>
 
   <!-- Step 2: Date -->
@@ -132,7 +128,7 @@ input[type=date]{color-scheme:light}
       <input type="date" id="datePicker">
     </div>
     <p style="font-size:12px;color:var(--muted);margin-top:10px">
-      Mon–Fri 4–8 PM &nbsp;|&nbsp; Sat 11 AM–8 PM &nbsp;|&nbsp; Sun 12–8 PM
+      Mon–Fri 4–8 PM &nbsp;|&nbsp; Sat 11 AM–12 AM &nbsp;|&nbsp; Sun 12–10 PM
     </p>
   </div>
 
@@ -177,24 +173,35 @@ const API = '';
 let state = { date: null, duration: null, isFullDay: false, startTime: null, endTime: null, price: 0 };
 let _settings = { hourlyRate: 10, weekdayFullDayPrice: 30, weekendFullDayPrice: 50, fullDayEnabled: true };
 
+function buildDurationChips(s) {
+  const container = document.getElementById('durationChips');
+  container.innerHTML = '';
+  for (let h = 2; h <= 13; h++) {
+    const btn = document.createElement('button');
+    btn.className = 'chip';
+    btn.dataset.hours   = h;
+    btn.dataset.fullDay = 'false';
+    btn.innerHTML = `${h} hrs <span style="font-size:11px;color:var(--muted);margin-left:3px">$${h * s.hourlyRate}</span>`;
+    btn.addEventListener('click', () => selectDurationChip(btn));
+    container.appendChild(btn);
+  }
+  if (s.fullDayEnabled) {
+    const btn = document.createElement('button');
+    btn.className = 'chip full-day';
+    btn.dataset.hours   = '0';
+    btn.dataset.fullDay = 'true';
+    btn.innerHTML = `Full Day <span id="fullDayPriceChip" style="font-size:11px;color:var(--muted);margin-left:4px">Wkday $${s.weekdayFullDayPrice} · Wkend $${s.weekendFullDayPrice}</span>`;
+    btn.addEventListener('click', () => selectDurationChip(btn));
+    container.appendChild(btn);
+  }
+}
+
 async function loadSettings() {
   try {
     const res = await fetch(`${API}/api/settings`);
     _settings = await res.json();
   } catch {}
-  // Update hourly chip prices
-  document.querySelectorAll('#durationChips .chip[data-full-day="false"]').forEach(btn => {
-    const h = parseInt(btn.dataset.hours);
-    const span = btn.querySelector('span');
-    if (span) span.textContent = `$${h * _settings.hourlyRate}`;
-  });
-  // Show/hide Full Day chip
-  const fdChip = document.querySelector('#durationChips .chip[data-full-day="true"]');
-  if (fdChip) {
-    fdChip.style.display = _settings.fullDayEnabled ? '' : 'none';
-    const span = document.getElementById('fullDayPriceChip');
-    if (span) span.textContent = `Wkday $${_settings.weekdayFullDayPrice} · Wkend $${_settings.weekendFullDayPrice}`;
-  }
+  buildDurationChips(_settings);
 }
 loadSettings();
 
@@ -202,6 +209,7 @@ loadSettings();
 function fmt12(t) {
   if (!t) return '';
   const [h, m] = t.split(':').map(Number);
+  if (h === 24) return '12:00 AM';
   return `${h % 12 || 12}:${String(m).padStart(2,'0')} ${h >= 12 ? 'PM' : 'AM'}`;
 }
 function fmtDate(d) {
@@ -241,24 +249,22 @@ function getDayOfWeek(dateStr) {
 })();
 
 // ── Step 1: Duration chip clicked ─────────────────────────────────────────
-document.querySelectorAll('#durationChips .chip').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('#durationChips .chip').forEach(c => c.classList.remove('selected'));
-    btn.classList.add('selected');
-    state.duration   = parseInt(btn.dataset.hours);
-    state.isFullDay  = btn.dataset.fullDay === 'true';
-    state.date       = null;
-    state.startTime  = null;
-    state.endTime    = null;
-    state.price      = state.isFullDay ? 0 : state.duration * 10;
-    clearAlert();
-    document.getElementById('datePicker').value = '';
-    hide('secTime');
-    hide('secInfo');
-    show('secDate');
-    setStep(2);
-  });
-});
+function selectDurationChip(btn) {
+  document.querySelectorAll('#durationChips .chip').forEach(c => c.classList.remove('selected'));
+  btn.classList.add('selected');
+  state.duration  = parseInt(btn.dataset.hours);
+  state.isFullDay = btn.dataset.fullDay === 'true';
+  state.date      = null;
+  state.startTime = null;
+  state.endTime   = null;
+  state.price     = state.isFullDay ? 0 : state.duration * _settings.hourlyRate;
+  clearAlert();
+  document.getElementById('datePicker').value = '';
+  hide('secTime');
+  hide('secInfo');
+  show('secDate');
+  setStep(2);
+}
 
 // ── Step 2: Date selected ─────────────────────────────────────────────────
 document.getElementById('datePicker').addEventListener('change', async function() {
