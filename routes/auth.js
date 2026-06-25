@@ -3,7 +3,7 @@ const router  = express.Router();
 const crypto  = require('crypto');
 const fetch   = require('node-fetch');
 
-const SCOPES = 'read_metaobjects,write_metaobjects,read_draft_orders,write_draft_orders,read_orders';
+const SCOPES = 'read_metaobjects,write_metaobjects,write_metaobject_definitions,read_draft_orders,write_draft_orders,read_orders';
 
 // GET /auth  — start the OAuth install
 router.get('/', (req, res) => {
