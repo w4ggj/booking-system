@@ -77,6 +77,11 @@ router.post('/', async (req, res) => {
           originalUnitPrice: price.toFixed(2),
           requiresShipping: false,
           taxable: false,
+          customAttributes: [
+            { key: 'Date',     value: fmtDateShort(date) },
+            { key: 'Time',     value: timeDisplay },
+            { key: 'Duration', value: fullDay ? 'Full Day' : `${durationHours} hours` },
+          ],
         }],
         email: customerEmail,
         customAttributes: [
