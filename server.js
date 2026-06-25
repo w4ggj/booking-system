@@ -64,4 +64,9 @@ app.get('*', (_req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Balance Booking running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Balance Booking running on port ${PORT}`);
+  // Ensure booking_config metaobject is owned by this app
+  const { ensureBookingConfig } = require('./services/settings');
+  ensureBookingConfig().catch(err => console.error('[settings] startup error:', err.message));
+});
