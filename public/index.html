@@ -112,22 +112,27 @@ input[type=date]{color-scheme:dark}
 
   <div id="alertBox" class="alert error"></div>
 
-  <!-- Step 1: Date -->
-  <div class="section visible" id="secDate">
-    <div class="section-title"><span>1</span> Choose a Date</div>
+  <!-- Step 1: Duration -->
+  <div class="section visible" id="secDuration">
+    <div class="section-title"><span>1</span> Choose Duration <span class="price-tag">$10/hr</span></div>
+    <div class="chips" id="durationChips">
+      <button class="chip" data-hours="2" data-full-day="false">2 Hours <span style="color:var(--muted);font-size:12px;margin-left:4px">$20</span></button>
+      <button class="chip" data-hours="3" data-full-day="false">3 Hours <span style="color:var(--muted);font-size:12px;margin-left:4px">$30</span></button>
+      <button class="chip" data-hours="4" data-full-day="false">4 Hours <span style="color:var(--muted);font-size:12px;margin-left:4px">$40</span></button>
+      <button class="chip full-day" data-hours="4" data-full-day="true">Full Day <span id="fullDayPriceChip" style="color:var(--muted);font-size:12px;margin-left:4px">Wkday $30 · Wkend $50</span></button>
+    </div>
+  </div>
+
+  <!-- Step 2: Date -->
+  <div class="section" id="secDate">
+    <div class="section-title"><span>2</span> Choose a Date</div>
     <div class="field">
       <label for="datePicker">Select date</label>
       <input type="date" id="datePicker">
     </div>
     <p style="font-size:12px;color:var(--muted);margin-top:10px">
-      Mon–Fri 4–8 PM &nbsp;|&nbsp; Sat 11 AM–8 PM &nbsp;|&nbsp; Sun 12–8 PM &nbsp;|&nbsp; $10/hr
+      Mon–Fri 4–8 PM &nbsp;|&nbsp; Sat 11 AM–8 PM &nbsp;|&nbsp; Sun 12–8 PM
     </p>
-  </div>
-
-  <!-- Step 2: Duration -->
-  <div class="section" id="secDuration">
-    <div class="section-title"><span>2</span> Choose Duration <span class="price-tag" id="hourlyNote"></span></div>
-    <div class="chips" id="durationChips"></div>
   </div>
 
   <!-- Step 3: Time Slot -->
@@ -162,7 +167,7 @@ input[type=date]{color-scheme:dark}
 
   <div class="footer">
     <p>Secure checkout via Shopify &bull; Confirmation email sent immediately</p>
-    <p>Questions? <a href="mailto:balance.ma.gaming@gmail.com">balance.ma.gaming@gmail.com</a></p>
+    <p>Questions? <a href="mailto:balancereservations@outlook.com">balancereservations@outlook.com</a></p>
   </div>
 </div>
 
@@ -187,8 +192,7 @@ function showAlert(msg, type='error') {
   el.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
 function clearAlert() {
-  const el = document.getElementById('alertBox');
-  el.className = 'alert error';
+  document.getElementById('alertBox').className = 'alert error';
 }
 function setStep(n) {
   [1,2,3,4].forEach(i => {
@@ -198,12 +202,12 @@ function setStep(n) {
     else s.className = 'step';
   });
 }
-function showSection(id) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('visible'));
-  // show all sections up to and including this one
-  const order = ['secDate','secDuration','secTime','secInfo'];
-  const idx = order.indexOf(id);
-  order.slice(0, idx+1).forEach(s => { const el=document.getElementById(s); if(el) el.classList.add('visible'); });
+function show(id) { document.getElementById(id).classList.add('visible'); }
+function hide(id) { document.getElementById(id).classList.remove('visible'); }
+
+function getDayOfWeek(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m-1, d).getDay();
 }
 
 // ── Min date = today ──────────────────────────────────────────────────────
@@ -213,77 +217,71 @@ function showSection(id) {
   document.getElementById('datePicker').min = `${y}-${m}-${d}`;
 })();
 
-// ── Step 1: Date selected ─────────────────────────────────────────────────
-document.getElementById('datePicker').addEventListener('change', async function() {
-  state.date = this.value;
-  state.duration = null; state.isFullDay = false; state.startTime = null; state.endTime = null;
-  clearAlert();
-  document.getElementById('secDuration').classList.remove('visible');
-  document.getElementById('secTime').classList.remove('visible');
-  document.getElementById('secInfo').classList.remove('visible');
-  if (!state.date) return;
-
-  const chips = document.getElementById('durationChips');
-  chips.innerHTML = '<div style="color:var(--muted);font-size:13px"><span class="spinner"></span>Loading...</div>';
-  document.getElementById('secDuration').classList.add('visible');
-  setStep(2);
-
-  try {
-    const res = await fetch(`${API}/api/availability?date=${state.date}`);
-    const data = await res.json();
-    if (!data.open) {
-      chips.innerHTML = '<div class="no-slots">Closed on this day.</div>';
-      return;
-    }
-    document.getElementById('hourlyNote').textContent = '$10/hr';
-    chips.innerHTML = '';
-    data.durations.forEach(d => {
-      const btn = document.createElement('button');
-      btn.className = 'chip' + (d.isFullDay ? ' full-day' : '');
-      btn.dataset.hours = d.hours;
-      btn.dataset.price = d.price;
-      btn.dataset.fullDay = d.isFullDay;
-      btn.innerHTML = `${d.label} <span style="color:var(--muted);font-size:12px;margin-left:4px">$${d.price}</span>`;
-      btn.onclick = () => selectDuration(btn, d);
-      chips.appendChild(btn);
-    });
-  } catch(e) {
-    chips.innerHTML = '<div class="no-slots">Failed to load — please try again.</div>';
-  }
+// ── Step 1: Duration chip clicked ─────────────────────────────────────────
+document.querySelectorAll('#durationChips .chip').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#durationChips .chip').forEach(c => c.classList.remove('selected'));
+    btn.classList.add('selected');
+    state.duration   = parseInt(btn.dataset.hours);
+    state.isFullDay  = btn.dataset.fullDay === 'true';
+    state.date       = null;
+    state.startTime  = null;
+    state.endTime    = null;
+    state.price      = state.isFullDay ? 0 : state.duration * 10;
+    clearAlert();
+    document.getElementById('datePicker').value = '';
+    hide('secTime');
+    hide('secInfo');
+    show('secDate');
+    setStep(2);
+  });
 });
 
-// ── Step 2: Duration selected ─────────────────────────────────────────────
-async function selectDuration(btn, d) {
-  document.querySelectorAll('#durationChips .chip').forEach(c => c.classList.remove('selected'));
-  btn.classList.add('selected');
-  state.duration = d.hours; state.isFullDay = d.isFullDay; state.price = d.price;
-  state.startTime = null; state.endTime = null;
+// ── Step 2: Date selected ─────────────────────────────────────────────────
+document.getElementById('datePicker').addEventListener('change', async function() {
+  state.date      = this.value;
+  state.startTime = null;
+  state.endTime   = null;
   clearAlert();
-  document.getElementById('secTime').classList.remove('visible');
-  document.getElementById('secInfo').classList.remove('visible');
-  setStep(3);
+  hide('secTime');
+  hide('secInfo');
+  if (!state.date) return;
+
+  // For Full Day, determine price from day of week
+  if (state.isFullDay) {
+    const dow = getDayOfWeek(state.date);
+    state.price = (dow === 0 || dow === 6) ? 50 : 30;
+  }
 
   const wrap = document.getElementById('slotsWrap');
   wrap.innerHTML = '<div style="color:var(--muted);font-size:13px"><span class="spinner"></span>Checking availability...</div>';
-  document.getElementById('secTime').classList.add('visible');
-  showSection('secTime');
+  show('secTime');
+  setStep(3);
 
   try {
-    const url = `${API}/api/availability?date=${state.date}&duration=${d.hours}&isFullDay=${d.isFullDay}`;
+    const url = `${API}/api/availability?date=${state.date}&duration=${state.duration}&isFullDay=${state.isFullDay}`;
     const res = await fetch(url);
     const data = await res.json();
 
+    if (data.open === false) {
+      wrap.innerHTML = '<div class="no-slots">Closed on this day. Please select a different date.</div>';
+      return;
+    }
     if (!data.slots || data.slots.length === 0) {
-      wrap.innerHTML = '<div class="no-slots">No available time slots for this duration. Please choose another.</div>';
+      const label = state.isFullDay ? 'full day' : `${state.duration}-hour`;
+      wrap.innerHTML = `<div class="no-slots">No ${label} slots available on this date. Please choose a different date.</div>`;
       return;
     }
 
     wrap.innerHTML = '';
-    const chips = document.createElement('div'); chips.className = 'chips';
+    const chips = document.createElement('div');
+    chips.className = 'chips';
     data.slots.forEach(slot => {
       const btn = document.createElement('button');
       btn.className = 'chip';
-      btn.textContent = state.isFullDay ? 'Full Day' : fmt12(slot.startTime);
+      btn.textContent = state.isFullDay
+        ? `Full Day (${fmt12(slot.startTime)} – ${fmt12(slot.endTime)})`
+        : fmt12(slot.startTime);
       btn.onclick = () => selectSlot(btn, slot);
       chips.appendChild(btn);
     });
@@ -291,7 +289,7 @@ async function selectDuration(btn, d) {
   } catch(e) {
     wrap.innerHTML = '<div class="no-slots">Failed to load slots — please try again.</div>';
   }
-}
+});
 
 // ── Step 3: Time slot selected ────────────────────────────────────────────
 function selectSlot(btn, slot) {
@@ -301,14 +299,14 @@ function selectSlot(btn, slot) {
   state.endTime   = slot.endTime;
   clearAlert();
   setStep(4);
-  showSection('secInfo');
+  show('secInfo');
   updateSummary();
 }
 
 // ── Update booking summary ────────────────────────────────────────────────
 function updateSummary() {
   if (!state.date || !state.startTime) return;
-  const timeStr = state.isFullDay ? 'Full Day' : `${fmt12(state.startTime)} – ${fmt12(state.endTime)}`;
+  const timeStr = state.isFullDay ? `Full Day (${fmt12(state.startTime)} – ${fmt12(state.endTime)})` : `${fmt12(state.startTime)} – ${fmt12(state.endTime)}`;
   const durStr  = state.isFullDay ? 'Full Day' : `${state.duration} hour${state.duration > 1 ? 's' : ''}`;
   document.getElementById('sumDate').textContent     = fmtDate(state.date);
   document.getElementById('sumTime').textContent     = timeStr;
