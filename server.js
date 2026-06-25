@@ -5,15 +5,10 @@ const path    = require('path');
 
 const app = express();
 
-// Capture raw body for Shopify webhook HMAC verification BEFORE JSON parsing
-app.use('/api/webhooks', (req, _res, next) => {
-  let raw = '';
-  req.on('data', c => { raw += c; });
-  req.on('end', () => { req.rawBody = raw; next(); });
-});
-
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+  verify: (req, _res, buf) => { req.rawBody = buf; },
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
