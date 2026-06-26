@@ -12,36 +12,64 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/api/webhooks',   require('./routes/webhooks'));
-app.use('/api/membership', require('./routes/membership'));
-app.use('/api/admin',      require('./routes/admin'));
+app.use('/auth',             require('./routes/auth'));
+app.use('/api/availability', require('./routes/availability'));
+app.use('/api/checkout',     require('./routes/checkout'));
+app.use('/api/webhooks',     require('./routes/webhooks'));
+app.use('/api/admin',        require('./routes/admin'));
 
-// Inject checkout URL into portal — builds direct cart link with selling plan pre-selected
-app.get('/portal-config.js', (_req, res) => {
-  res.type('application/javascript');
-  const shop      = process.env.SHOPIFY_SHOP || '';
-  const variantId = (process.env.MEMBERSHIP_VARIANT_ID || '').replace('gid://shopify/ProductVariant/', '');
-  const planId    = (process.env.SELLING_PLAN_ID || '').replace('gid://shopify/SellingPlan/', '');
-  const url = (shop && variantId && planId)
-    ? `https://${shop}/cart/${variantId}:1?selling_plan=${planId}`
-    : (process.env.MEMBERSHIP_PRODUCT_URL || '#');
-  res.send(`window.MEMBERSHIP_PRODUCT_URL = "${url}";`);
+app.get('/api/settings', async (_req, res) => {
+  try {
+    const { getSettings } = require('./services/settings');
+    const s = await getSettings();
+    res.json({
+      hourlyRate:           parseFloat(s.hourly_rate)             || 10,
+      weekdayFullDayPrice:  parseFloat(s.weekday_full_day_price)  || 30,
+      weekendFullDayPrice:  parseFloat(s.weekend_full_day_price)  || 50,
+      fullDayEnabled:       s.full_day_enabled !== 'false',
+    });
+  } catch {
+    res.json({ hourlyRate: 10, weekdayFullDayPrice: 30, weekendFullDayPrice: 50, fullDayEnabled: true });
+  }
 });
 
+// Temporary debug: check server's Shopify access
+app.get('/api/debug/settings', async (_req, res) => {
+  const { shopifyGraphQL } = require('./services/shopify');
+  const KNOWN_ID = 'gid://shopify/Metaobject/207702261863';
+  const out = { shop: process.env.SHOPIFY_SHOP };
+
+  try {
+    const d1 = await shopifyGraphQL(
+      `query { metaobjects(type: "booking_config", first: 1) { nodes { id fields { key value } } } }`
+    );
+    out.byType = d1.metaobjects.nodes;
+  } catch (e) { out.byTypeError = e.message; }
+
+  try {
+    const d2 = await shopifyGraphQL(
+      `query($id:ID!){ node(id:$id){ ... on Metaobject { id fields { key value } } } }`,
+      { id: KNOWN_ID }
+    );
+    out.byId = d2.node;
+  } catch (e) { out.byIdError = e.message; }
+
+  res.json(out);
+});
+
+// SPA fallback: /admin/* → admin panel, everything else → booking form
 app.get('/admin*', (_req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html')));
 app.get('*', (_req, res) =>
   res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Balance Membership running on port ${PORT}`);
+  console.log(`Balance Booking running on port ${PORT}`);
   try {
-    const { ensureMemberDefinition } = require('./setup/initShopify');
-    ensureMemberDefinition().catch(err =>
-      console.error('[setup] startup error:', err.message)
-    );
+    const { ensureBookingConfig } = require('./services/settings');
+    ensureBookingConfig().catch(err => console.error('[settings] startup error:', err.message));
   } catch (err) {
-    console.error('[setup] startup error:', err.message);
+    console.error('[settings] startup error:', err.message);
   }
 });
