@@ -16,10 +16,16 @@ app.use('/api/webhooks',   require('./routes/webhooks'));
 app.use('/api/membership', require('./routes/membership'));
 app.use('/api/admin',      require('./routes/admin'));
 
-// Inject the Shopify product URL into the portal page so it can be set from env
+// Inject checkout URL into portal — builds direct cart link with selling plan pre-selected
 app.get('/portal-config.js', (_req, res) => {
   res.type('application/javascript');
-  res.send(`window.MEMBERSHIP_PRODUCT_URL = "${process.env.MEMBERSHIP_PRODUCT_URL || '#'}";`);
+  const shop      = process.env.SHOPIFY_SHOP || '';
+  const variantId = (process.env.MEMBERSHIP_VARIANT_ID || '').replace('gid://shopify/ProductVariant/', '');
+  const planId    = (process.env.SELLING_PLAN_ID || '').replace('gid://shopify/SellingPlan/', '');
+  const url = (shop && variantId && planId)
+    ? `https://${shop}/cart/${variantId}:1?selling_plan=${planId}`
+    : (process.env.MEMBERSHIP_PRODUCT_URL || '#');
+  res.send(`window.MEMBERSHIP_PRODUCT_URL = "${url}";`);
 });
 
 app.get('/admin*', (_req, res) =>
